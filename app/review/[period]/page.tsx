@@ -283,14 +283,12 @@ export default function ReviewPeriodPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
             >
-              {goalData && (
-                <GoalComparison
-                  goals={goalData.goals}
-                  yearlyStats={goalData.yearlyStats}
-                  analysis={goalAnalysis}
-                  isLoading={isYearlyAnalysisLoading}
-                />
-              )}
+              <GoalComparison
+                goals={goalData.goals}
+                yearlyStats={goalData.yearlyStats}
+                analysis={goalAnalysis}
+                isLoading={isYearlyAnalysisLoading}
+              />
             </motion.div>
           )}
 
