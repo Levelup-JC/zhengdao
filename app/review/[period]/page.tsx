@@ -46,11 +46,18 @@ export default function ReviewPeriodPage() {
   // 加载基础统计数据
   useEffect(() => {
     async function loadStats() {
-      if (!address) return;
+      // 确保钱包地址存在且有效
+      if (!address || address.length === 0) {
+        console.log('[Review] 钱包地址未连接，跳过数据加载');
+        setIsLoading(false);
+        return;
+      }
 
       setIsLoading(true);
       try {
+        console.log('[Review] 开始加载复盘数据', { period, address });
         const reviewStats = await getReviewStats(period, address);
+        console.log('[Review] 复盘数据加载成功', reviewStats);
         setStats(reviewStats);
 
         // 生成AI总结（通过API）
@@ -82,6 +89,17 @@ export default function ReviewPeriodPage() {
         }
       } catch (error) {
         console.error('加载复盘数据失败:', error);
+        // 设置默认空数据，避免页面卡住
+        setStats({
+          totalDays: 0,
+          yesDays: 0,
+          noDays: 0,
+          yesRatio: 0,
+          totalWords: 0,
+          avgWords: 0,
+          meaningfulSummaries: [],
+          dailyData: [],
+        });
         setIsAiLoading(false);
       } finally {
         setIsLoading(false);
@@ -94,11 +112,16 @@ export default function ReviewPeriodPage() {
   // 加载年度复盘专用数据
   useEffect(() => {
     async function loadYearlyData() {
-      if (period !== '1y' || !address) return;
+      if (period !== '1y' || !address || address.length === 0) {
+        console.log('[Review] 跳过年度复盘数据加载', { period, hasAddress: !!address });
+        return;
+      }
 
       setIsYearlyAnalysisLoading(true);
       try {
+        console.log('[Review] 开始加载年度复盘数据', address);
         const comparisonData = await getGoalComparisonData(address);
+        console.log('[Review] 年度复盘数据加载成功', comparisonData);
         setGoalData(comparisonData);
 
         // 生成目标对比分析（通过API）
@@ -151,6 +174,16 @@ export default function ReviewPeriodPage() {
         }
       } catch (error) {
         console.error('加载年度复盘数据失败:', error);
+        // 设置默认空数据
+        setGoalData({
+          goals: [],
+          yearlyStats: {
+            totalDays: 0,
+            meaningfulDays: 0,
+            meaningfulRatio: 0,
+          },
+          monthlyData: [],
+        });
       } finally {
         setIsYearlyAnalysisLoading(false);
       }
@@ -181,7 +214,7 @@ export default function ReviewPeriodPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#FFFEF2] p-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-center h-96">
             <div className="text-center">
               <motion.div
@@ -208,7 +241,7 @@ export default function ReviewPeriodPage() {
 
   return (
     <div className="min-h-screen bg-[#FFFEF2] p-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* 页面标题 */}
         <motion.div
           className="mb-8"
