@@ -94,8 +94,9 @@ async function test2_MintSBT(sbt, deployer, testUser) {
     const testUserTokens = await sbt.getUserTokens(testUser.address);
     logTest("用户 SBT 余额查询", "pass", `${testUserTokens.length} 个`);
 
+    let tokenId = null;
     if (testUserTokens.length > 0) {
-      const tokenId = testUserTokens[0];
+      tokenId = testUserTokens[testUserTokens.length - 1]; // 获取最新铸造的
       const details = await sbt.getTokenDetails(tokenId);
 
       console.log(`\n📋 新铸造的 SBT 详情:`);
