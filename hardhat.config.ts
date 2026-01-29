@@ -38,9 +38,11 @@ const config: HardhatUserConfig = {
     },
     // 别名：bnbMainnet (用于主网部署脚本)
     bnbMainnet: {
-      url: process.env.BNB_MAINNET_RPC_URL || "https://bsc-dataseed.binance.org/",
+      url: "https://bsc-dataseed1.defibit.io/",
       chainId: 56,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      timeout: 60000,
+      gasPrice: 5000000000 // 5 gwei
     }
   },
   paths: {
