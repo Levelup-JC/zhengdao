@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAccount } from 'wagmi';
 import {
@@ -28,6 +28,7 @@ import { aggregateMeaningfulDays } from '@/lib/chart-utils';
 type PeriodType = '7d' | '30d' | '6m' | '1y';
 
 export default function ReviewPeriodPage() {
+  const router = useRouter();
   const { address } = useAccount();
   const params = useParams();
   const period = (params.period as PeriodType) || '7d';
@@ -246,14 +247,14 @@ export default function ReviewPeriodPage() {
         <motion.button
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          onClick={() => router.push('/')}
+          onClick={() => router.push('/check-in')}
           className="mb-6 flex items-center gap-2 px-4 py-2 bg-white border-2 border-ink/30 text-ink font-bold hover:bg-ink/5 transition-colors"
           style={{ borderRadius: 0, fontFamily: 'Georgia, serif' }}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
-          返回主页
+          返回打卡
         </motion.button>
 
         {/* 页面标题 */}
