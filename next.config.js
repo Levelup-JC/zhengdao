@@ -7,6 +7,9 @@ const nextConfig = {
     removeConsole: process.env.NODE_ENV === 'production',
   },
 
+  // Next.js 16: Webpack 配置（使用空 turbopack 配置以启用 webpack）
+  turbopack: {},
+
   webpack: (config, { dev, isServer }) => {
     // 原有配置
     config.resolve.fallback = { fs: false, net: false, tls: false };
