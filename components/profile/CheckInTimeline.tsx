@@ -263,9 +263,9 @@ export function CheckInTimeline({ limit = 10 }: CheckInTimelineProps) {
                   {/* 关键词 */}
                   {reflection.structuredData.keywords.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
-                      {reflection.structuredData.keywords.slice(0, 3).map((keyword, i) => (
+                      {reflection.structuredData.keywords.slice(0, 3).map((keyword) => (
                         <span
-                          key={i}
+                          key={`${reflection.id}-${keyword}`}
                           className="text-xs text-ink/60"
                         >
                           #{keyword}

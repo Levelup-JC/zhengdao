@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAccount } from 'wagmi';
+import { useSkipMode } from '@/lib/context/SkipModeContext';
 import {
   PeriodSelector,
   StatsSummary,
@@ -30,6 +31,7 @@ type PeriodType = '7d' | '30d' | '6m' | '1y';
 export default function ReviewPeriodPage() {
   const router = useRouter();
   const { address } = useAccount();
+  const { isSkipMode } = useSkipMode();
   const params = useParams();
   const period = (params.period as PeriodType) || '7d';
 
@@ -47,8 +49,8 @@ export default function ReviewPeriodPage() {
   // 加载基础统计数据
   useEffect(() => {
     async function loadStats() {
-      // 确保钱包地址存在且有效
-      if (!address || address.length === 0) {
+      // 体验模式或已连接钱包时加载数据
+      if (!isSkipMode && (!address || address.length === 0)) {
         console.log('[Review] 钱包地址未连接，跳过数据加载');
         setIsLoading(false);
         return;
@@ -56,31 +58,39 @@ export default function ReviewPeriodPage() {
 
       setIsLoading(true);
       try {
-        console.log('[Review] 开始加载复盘数据', { period, address });
-        const reviewStats = await getReviewStats(period, address);
+        console.log('[Review] 开始加载复盘数据', { period, address, isSkipMode });
+        const reviewStats = await getReviewStats(period, address || '', isSkipMode);
         console.log('[Review] 复盘数据加载成功', reviewStats);
         setStats(reviewStats);
 
         // 生成AI总结（通过API）
         setIsAiLoading(true);
         try {
-          const response = await fetch('/api/review/ai-summary', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              period,
-              stats: reviewStats,
-            }),
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            setAiSummary(data.summary);
+          // 体验模式：直接使用降级文案，不调用 AI API
+          if (isSkipMode) {
+            const { generateAIReviewSummary } = await import('@/lib/review-service');
+            const summary = await generateAIReviewSummary(period, reviewStats);
+            setAiSummary(summary);
           } else {
-            console.error('AI总结生成失败:', await response.text());
-            setAiSummary('暂时无法生成AI总结，请稍后再试。');
+            // 真实模式：调用 AI API
+            const response = await fetch('/api/review/ai-summary', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                period,
+                stats: reviewStats,
+              }),
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              setAiSummary(data.summary);
+            } else {
+              console.error('AI总结生成失败:', await response.text());
+              setAiSummary('暂时无法生成AI总结，请稍后再试。');
+            }
           }
         } catch (error) {
           console.error('AI总结生成失败:', error);
@@ -108,41 +118,49 @@ export default function ReviewPeriodPage() {
     }
 
     loadStats();
-  }, [period, address]);
+  }, [period, address, isSkipMode]);
 
   // 加载年度复盘专用数据
   useEffect(() => {
     async function loadYearlyData() {
-      if (period !== '1y' || !address || address.length === 0) {
-        console.log('[Review] 跳过年度复盘数据加载', { period, hasAddress: !!address });
+      if (period !== '1y' || (!isSkipMode && (!address || address.length === 0))) {
+        console.log('[Review] 跳过年度复盘数据加载', { period, hasAddress: !!address, isSkipMode });
         return;
       }
 
       setIsYearlyAnalysisLoading(true);
       try {
-        console.log('[Review] 开始加载年度复盘数据', address);
-        const comparisonData = await getGoalComparisonData(address);
+        console.log('[Review] 开始加载年度复盘数据', { address, isSkipMode });
+        const comparisonData = await getGoalComparisonData(address || '', isSkipMode);
         console.log('[Review] 年度复盘数据加载成功', comparisonData);
         setGoalData(comparisonData);
 
         // 生成目标对比分析（通过API）
         try {
-          const goalResponse = await fetch('/api/review/goal-analysis', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              comparisonData,
-            }),
-          });
-
-          if (goalResponse.ok) {
-            const goalData = await goalResponse.json();
-            setGoalAnalysis(goalData.analysis);
+          // 体验模式：直接使用降级文案
+          if (isSkipMode) {
+            const { generateGoalComparisonAnalysis } = await import('@/lib/review-service');
+            const analysis = await generateGoalComparisonAnalysis(comparisonData);
+            setGoalAnalysis(analysis);
           } else {
-            console.error('目标对比分析生成失败:', await goalResponse.text());
-            setGoalAnalysis('暂时无法生成目标对比分析，请稍后再试。');
+            // 真实模式：调用 AI API
+            const goalResponse = await fetch('/api/review/goal-analysis', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                comparisonData,
+              }),
+            });
+
+            if (goalResponse.ok) {
+              const goalData = await goalResponse.json();
+              setGoalAnalysis(goalData.analysis);
+            } else {
+              console.error('目标对比分析生成失败:', await goalResponse.text());
+              setGoalAnalysis('暂时无法生成目标对比分析，请稍后再试。');
+            }
           }
         } catch (error) {
           console.error('目标对比分析生成失败:', error);
@@ -152,22 +170,30 @@ export default function ReviewPeriodPage() {
         // 分析问题月份（通过API）
         const problemMonths = analyzeProblemMonths(comparisonData.monthlyData);
         try {
-          const problemResponse = await fetch('/api/review/problem-analysis', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              problemMonths,
-            }),
-          });
-
-          if (problemResponse.ok) {
-            const problemData = await problemResponse.json();
-            setProblemAnalysis(problemData.analysis);
+          // 体验模式：直接使用降级文案
+          if (isSkipMode) {
+            const { generateProblemAnalysis } = await import('@/lib/review-service');
+            const analysis = await generateProblemAnalysis(problemMonths);
+            setProblemAnalysis(analysis);
           } else {
-            console.error('问题分析报告生成失败:', await problemResponse.text());
-            setProblemAnalysis('暂时无法生成问题分析报告，请稍后再试。');
+            // 真实模式：调用 AI API
+            const problemResponse = await fetch('/api/review/problem-analysis', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                problemMonths,
+              }),
+            });
+
+            if (problemResponse.ok) {
+              const problemData = await problemResponse.json();
+              setProblemAnalysis(problemData.analysis);
+            } else {
+              console.error('问题分析报告生成失败:', await problemResponse.text());
+              setProblemAnalysis('暂时无法生成问题分析报告，请稍后再试。');
+            }
           }
         } catch (error) {
           console.error('问题分析报告生成失败:', error);
@@ -191,7 +217,7 @@ export default function ReviewPeriodPage() {
     }
 
     loadYearlyData();
-  }, [period, address]);
+  }, [period, address, isSkipMode]);
 
   // 生成图表数据
   const generateChartData = () => {
@@ -305,8 +331,8 @@ export default function ReviewPeriodPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35 }}
             >
-              {period === '1y' ? (
-                <MonthlyBarChart checkInData={stats.dailyData} />
+              {period === '1y' || period === '6m' ? (
+                <MonthlyBarChart checkInData={stats.dailyData} period={period} />
               ) : (
                 <CalendarStats period={period} checkInData={stats.dailyData} />
               )}

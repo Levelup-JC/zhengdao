@@ -8,15 +8,24 @@
 
 import { ComingSoonShowcase } from '@/components/ComingSoonShowcase';
 import { ChainSwitcher } from '@/components/achievement/ChainSwitcher';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export default function ComingSoonPage() {
+  const router = useRouter();
   const [currentChain, setCurrentChain] = useState<'bnb' | 'solana'>('bnb');
 
   return (
     <main className="coming-soon-page">
       {/* 页面头部 */}
       <div className="page-header">
+        <button
+          onClick={() => router.push('/profile')}
+          className="back-button"
+        >
+          ← 返回主页
+        </button>
+
         <div className="header-content">
           <h1 className="page-title">
             证道 · 即将推出
@@ -69,6 +78,23 @@ export default function ComingSoonPage() {
         .coming-soon-page {
           min-height: 100vh;
           background: linear-gradient(135deg, #FFFEF2 0%, #FFF9E6 100%);
+        }
+
+        .back-button {
+          padding: 0.5rem 1rem;
+          background: white;
+          border: 2px solid #1a1a1a;
+          color: #1a1a1a;
+          font-family: 'Georgia', serif;
+          font-weight: bold;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          margin-right: 1rem;
+        }
+
+        .back-button:hover {
+          background: #1a1a1a;
+          color: white;
         }
 
         .page-header {

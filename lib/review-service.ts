@@ -176,7 +176,15 @@ ${stats.meaningfulSummaries.length > 0 ? '(直接引用用户原话，适当归�
 
 ${stats.meaningfulSummaries.length > 0 ? summariesText : `${stats.totalDays > 0 ? '继续坚持记录，让每一天都更有意义。' : '开始记录你的生活吧！'}`}`;
 
-  const aiResult = await generateAIResponse(prompt, 500);
+  let aiResult: string | null = null;
+
+  // 尝试调用 AI，失败时自动使用降级文案
+  try {
+    aiResult = await generateAIResponse(prompt, 500);
+  } catch (error) {
+    console.error('[generateAIReviewSummary] AI调用失败，使用降级文案:', error);
+    // AI调用失败，aiResult 保持为 null，将使用降级文案
+  }
 
   if (aiResult) {
     return aiResult;
@@ -187,42 +195,75 @@ ${stats.meaningfulSummaries.length > 0 ? summariesText : `${stats.totalDays > 0 
   let trend = '';
   let encouragement = '';
   let suggestion = '';
+  let detailedAnalysis = '';
 
   // 判断趋势
   if (ratio >= 80) {
     trend = '表现出色！';
-    encouragement = '你的自律程度令人敬佩，继续保持这种积极的状态。';
-    suggestion = '建议继续保持当前习惯，并尝试帮助身边的人一起成长。';
+    encouragement = '你的自律程度令人敬佩，继续保持这种积极的状态。这段时间你展现了极高的执行力，每一天都充满了意义。';
+    suggestion = '建议继续保持当前习惯，并可以开始思考如何将这种自律延伸到生活的其他领域。记录下你的成功经验，这将是你宝贵的财富。';
+    detailedAnalysis = `• 你在过去${stats.totalDays}天中保持了${stats.yesDays}天的高质量生活\n• 平均每天记录${stats.avgWords}字，说明你有着深刻的反思习惯\n• ${ratio.toFixed(1)}%的有意义率是一个非常优秀的成绩`;
   } else if (ratio >= 60) {
     trend = '表现良好！';
-    encouragement = '你大部分时间都过得很充实，已经形成了良好的自律习惯。';
-    suggestion = '可以尝试分析那些"没有意义"的日子，找出共同的干扰因素并加以改进。';
+    encouragement = '你大部分时间都过得很充实，已经形成了良好的自律习惯。虽然偶尔会有松懈，但整体趋势非常积极。';
+    suggestion = '可以尝试分析那${stats.noDays}天"没有意义"的日子，是否因为工作压力、情绪波动或其他原因？找到规律后就能更好地应对。';
+    detailedAnalysis = `• 你在过去${stats.totalDays}天中有${stats.yesDays}天保持了高质量生活\n• 平均每天记录${stats.avgWords}字，展现了良好的反思习惯\n• ${ratio.toFixed(1)}%的有意义率超过了大多数人的水平`;
   } else if (ratio >= 40) {
-    trend = '仍有提升空间。';
-    encouragement = '你正在努力坚持打卡，这是一个好的开始。';
-    suggestion = '建议设定更具体的小目标，逐步提高"有意义天数"的比例。';
+    trend = '正在稳步前进。';
+    encouragement = '你正在努力坚持打卡，这本身就是一种进步。每一份反思都是对自己生活的思考和总结，值得肯定。';
+    suggestion = '建议设定更具体的小目标，比如"这周要有5天过得很充实"。从小目标开始，逐步建立成就感，自然就会提高有意义天数比例。';
+    detailedAnalysis = `• 你在过去${stats.totalDays}天中坚持记录，这种坚持值得肯定\n• ${stats.yesDays}天的高质量生活说明你完全有能力过得很好\n• 平均每天记录${stats.avgWords}字，说明你在认真对待每一天`;
   } else {
     trend = '需要调整状态。';
-    encouragement = '这阶段可能遇到了一些困难，没关系，每个低谷都是成长的机会。';
-    suggestion = '建议回顾那些有意义的日子，找出是什么让你感觉良好，然后尝试复制。';
+    encouragement = '这阶段可能遇到了一些困难，没关系，每个低谷都是成长的机会。重要的是你没有放弃，仍在坚持记录和反思。';
+    suggestion = '建议回顾那${stats.yesDays}天有意义的日子，当时发生了什么？是什么让你感觉良好？试着找出那些让你感到充实的因素，然后有意识地创造更多这样的时刻。';
+    detailedAnalysis = `• 你在过去${stats.totalDays}天中坚持记录，这种坚持本身就很有价值\n• 虽然只有${stats.yesDays}天感觉良好，但这是一个起点\n• 平均每天记录${stats.avgWords}字，说明你在认真思考`;
   }
 
-  return `📊 **${periodLabels[period]}复盘总结**
+  // 选择展示的复盘内容（最多3条）
+  const showcaseSummaries = stats.meaningfulSummaries.slice(0, 3);
+  const summariesSection = showcaseSummaries.length > 0
+    ? `\n\n## ✨ 有意义的时刻\n\n${showcaseSummaries.map((text, index) => {
+        const preview = text.length > 150 ? text.slice(0, 150) + '...' : text;
+        return `**${index + 1}.** ${preview}`;
+      }).join('\n\n')}`
+    : '';
 
-在过去${periodLabels[period]}中，你共打卡${stats.totalDays}天，其中${stats.yesDays}天认为有意义，比例为${stats.yesRatio.toFixed(1)}%。
+  return `# 📊 ${periodLabels[period]}复盘总结
+
+## 🎯 总体概况
+
+在过去${periodLabels[period]}中，你共打卡**${stats.totalDays}天**，其中**${stats.yesDays}天**认为有意义，有意义天数比例为 **${stats.yesRatio.toFixed(1)}%**。
 
 **总体评价：**${trend}
 ${encouragement}
 
-**数据亮点：**
-• 平均每天记录${stats.avgWords}字的复盘
-• 有意义天数占比${stats.yesRatio.toFixed(1)}%
-${stats.yesRatio >= 60 ? '• 已超过60%的有意义率，继续保持！' : '• 还有提升空间，加油！'}
+---
 
-**改进建议：**
+## 📈 数据深度分析
+
+${detailedAnalysis}
+
+${stats.totalDays >= 7 ? `• 你已经坚持打卡超过一周，养成了记录习惯` : ''}
+${stats.avgWords >= 300 ? `• 平均每天${stats.avgWords}字的复盘，内容丰富详实` : ''}
+${stats.yesRatio >= 70 ? `• 有意义率超过70%，属于优秀水平` : stats.yesRatio >= 50 ? '• 有意义率超过50%，还有很大提升空间' : ''}
+${stats.noDays > 0 ? `• 有${stats.noDays}天需要改进，分析这些日子会让你成长更快` : ''}
+
+---
+
+## 💡 改进建议
+
 ${suggestion}
 
-${stats.totalDays < 7 ? '💡 提示：打卡天数较少，建议坚持记录至少7天以获得更准确的复盘分析。' : ''}`;
+---
+
+${stats.totalDays >= 10 ? `## 🌟 坚持的力量\n\n你已经连续打卡${stats.totalDays}天，这种坚持本身就是一种成功。继续保持，你会发现自己在不断成长！` : ''}${summariesSection}
+
+---
+
+${stats.totalDays < 7 ? `💡 **温馨提示**：打卡天数较少，建议坚持记录至少7天，系统将为你提供更准确的复盘分析。` : ''}
+
+> 复盘不是为了自责，而是为了成长。每一次记录，都是向更好的自己迈进的一步。`;
 }
 
 /**

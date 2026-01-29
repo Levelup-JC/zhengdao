@@ -167,17 +167,11 @@ export default function CheckInPage() {
 
       console.log('[CheckInPage] 保存成功，是否已打卡:', hasCheckedToday);
 
-      if (hasCheckedToday) {
-        // 如果今天已经打过卡，直接跳转到个人主页
-        toast.success('打卡更新成功！');
-        setTimeout(() => {
-          router.push('/profile');
-        }, 1000);
-      } else {
-        // 第一次打卡，跳转到上传图片页
-        toast.success('打卡成功！');
-        setStep('photo');
-      }
+      // 所有用户打卡成功后都跳转到 coming soon 页面（照片功能暂未开放）
+      toast.success('打卡成功！');
+      setTimeout(() => {
+        router.push('/coming-soon');
+      }, 1500);
     } catch (error) {
       console.error('[CheckInPage] 保存失败:', error);
       const errorMessage = error instanceof Error ? error.message : '保存失败，请重试';

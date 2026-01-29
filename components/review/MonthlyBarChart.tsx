@@ -12,6 +12,8 @@ import { motion } from 'framer-motion';
 interface MonthlyBarChartProps {
   /** 打卡数据 */
   checkInData: Array<{ date: string; isMeaningful: boolean }>;
+  /** 周期类型 */
+  period?: '1y' | '6m';
 }
 
 interface MonthData {
@@ -23,27 +25,30 @@ interface MonthData {
   totalDays: number;
 }
 
-export function MonthlyBarChart({ checkInData }: MonthlyBarChartProps) {
+export function MonthlyBarChart({ checkInData, period = '1y' }: MonthlyBarChartProps) {
   // 按月统计数据
   const monthlyData = useMemo(() => {
     const now = new Date();
     const currentYear = now.getFullYear();
 
-    // 初始化12个月的数据
+    // 初始化月度数据
     const months: MonthData[] = [];
-    const monthLabels = [
-      '一月', '二月', '三月', '四月', '五月', '六月',
-      '七月', '八月', '九月', '十月', '十一月', '十二月'
-    ];
+    const monthCount = period === '1y' ? 12 : 6;
+    const startOffset = period === '1y' ? 0 : 6; // 半年复盘显示7-12月或1-6月
 
-    for (let i = 0; i < 12; i++) {
+    const monthLabels = period === '1y'
+      ? ['一月', '二月', '三月', '四月', '五月', '六月',
+         '七月', '八月', '九月', '十月', '十一月', '十二月']
+      : ['七月', '八月', '九月', '十月', '十一月', '十二月'];
+
+    for (let i = 0; i < monthCount; i++) {
       months.push({
-        month: `${currentYear}-${String(i + 1).padStart(2, '0')}`,
+        month: `${currentYear}-${String(startOffset + i + 1).padStart(2, '0')}`,
         label: monthLabels[i],
         meaningfulDays: 0,
         notMeaningfulDays: 0,
         noCheckInDays: 0,
-        totalDays: new Date(currentYear, i + 1, 0).getDate()
+        totalDays: new Date(currentYear, startOffset + i + 1, 0).getDate()
       });
     }
 
@@ -53,11 +58,19 @@ export function MonthlyBarChart({ checkInData }: MonthlyBarChartProps) {
       if (date.getFullYear() !== currentYear) return;
 
       const monthIndex = date.getMonth();
-      if (monthIndex >= 0 && monthIndex < 12) {
-        if (item.isMeaningful) {
-          months[monthIndex].meaningfulDays++;
-        } else {
-          months[monthIndex].notMeaningfulDays++;
+      // 根据周期筛选月份
+      const validMonths = period === '1y'
+        ? Array.from({ length: 12 }, (_, i) => i)
+        : Array.from({ length: 6 }, (_, i) => startOffset + i);
+
+      if (validMonths.includes(monthIndex)) {
+        const arrayIndex = period === '1y' ? monthIndex : monthIndex - startOffset;
+        if (arrayIndex >= 0 && arrayIndex < months.length) {
+          if (item.isMeaningful) {
+            months[arrayIndex].meaningfulDays++;
+          } else {
+            months[arrayIndex].notMeaningfulDays++;
+          }
         }
       }
     });
@@ -101,7 +114,7 @@ export function MonthlyBarChart({ checkInData }: MonthlyBarChartProps) {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
       >
-        每月有意义天数、无意义天数和未打卡天数统计
+        {period === '1y' ? '全年12个月的有意义天数、无意义天数和未打卡天数统计' : '近6个月的有意义天数、无意义天数和未打卡天数统计'}
       </motion.p>
 
       {/* 图例 */}
@@ -176,7 +189,7 @@ export function MonthlyBarChart({ checkInData }: MonthlyBarChartProps) {
                           animate={{ height: `${meaningfulHeight}%` }}
                           transition={{ delay: 0.6 + index * 0.05, duration: 0.5 }}
                         >
-                          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-black opacity-0 group-hover:opacity-100 whitespace-nowrap"
+                          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-black whitespace-nowrap bg-white/80 px-1 rounded"
                                style={{ fontFamily: 'Georgia, serif' }}>
                             {month.meaningfulDays}
                           </div>
@@ -192,7 +205,7 @@ export function MonthlyBarChart({ checkInData }: MonthlyBarChartProps) {
                           animate={{ height: `${notMeaningfulHeight}%` }}
                           transition={{ delay: 0.6 + index * 0.05, duration: 0.5 }}
                         >
-                          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-black opacity-0 group-hover:opacity-100 whitespace-nowrap"
+                          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-black whitespace-nowrap bg-white/80 px-1 rounded"
                                style={{ fontFamily: 'Georgia, serif' }}>
                             {month.notMeaningfulDays}
                           </div>
@@ -208,7 +221,7 @@ export function MonthlyBarChart({ checkInData }: MonthlyBarChartProps) {
                           animate={{ height: `${noCheckInHeight}%` }}
                           transition={{ delay: 0.6 + index * 0.05, duration: 0.5 }}
                         >
-                          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-black opacity-0 group-hover:opacity-100 whitespace-nowrap"
+                          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-black whitespace-nowrap bg-white/80 px-1 rounded"
                                style={{ fontFamily: 'Georgia, serif' }}>
                             {month.noCheckInDays}
                           </div>
@@ -239,7 +252,7 @@ export function MonthlyBarChart({ checkInData }: MonthlyBarChartProps) {
         animate={{ opacity: 1 }}
         transition={{ delay: 1.2 }}
       >
-        💡 鼠标悬停可查看具体天数
+        💡 柱状图显示各月份数据统计
       </motion.div>
     </motion.div>
   );
