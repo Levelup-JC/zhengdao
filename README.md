@@ -230,6 +230,121 @@ anchor deploy
 anchor upgrade <program_id> --program-id zhengdao-sbt
 ```
 
+## 测试网领水配置
+
+在测试网部署和测试SBT功能之前，需要获取测试币。以下是两条测试网的领水配置：
+
+### BNB Chain Testnet 领水
+
+**水龙头地址**: https://testnet.bnbchain.org/faucet-smart
+
+**领水步骤**:
+1. 访问水龙头页面
+2. 连接您的MetaMask钱包（确保切换到BNB Chain Testnet）
+3. 输入钱包地址或直接连接钱包
+4. 完成人机验证（如需要）
+5. 点击"领取"按钮
+6. 等待测试BNB到账（通常几分钟内）
+
+**测试网配置**:
+- **网络名称**: BNB Chain Testnet
+- **RPC URL**: https://data-seed-prebsc-1-s1.binance.org:8545/
+- **Chain ID**: 97
+- **区块浏览器**: https://testnet.bscscan.com
+- **货币符号**: tBNB
+
+**其他领水渠道**:
+- BNB Chain官方Discord: https://discord.gg/bnbchain
+- 每日可领取0.1-1 tBNB
+
+### Solana Devnet 领水
+
+**水龙头地址**: https://faucet.solana.com/
+
+**领水步骤**:
+1. 访问Solana水龙头页面
+2. 输入您的Solana钱包地址
+3. 选择网络：Devnet
+4. 点击"Request Airdrop"或"领取空投"
+5. 等待测试SOL到账（通常几秒钟）
+
+**测试网配置**:
+- **RPC URL**: https://api.devnet.solana.com
+- **区块浏览器**: https://explorer.solana.com/?cluster=devnet
+- **货币符号**: SOL (Devnet)
+
+**CLI领水方式**:
+```bash
+# 使用Solana CLI领取
+solana airdrop 2 <your_wallet_address> --url devnet
+```
+
+**领水限制**:
+- 每次可领取1-2 SOL
+- 每个地址有一定的时间间隔限制
+- 可通过Solana Discord请求更多: https://discord.gg/solana
+
+### 钱包网络配置
+
+#### MetaMask 配置 (BNB Chain Testnet)
+
+在MetaMask中手动添加网络：
+1. 打开MetaMask
+2. 点击网络下拉菜单
+3. 选择"添加网络" → "手动添加网络"
+4. 填写以下信息：
+   - **网络名称**: BNB Chain Testnet
+   - **RPC URL**: https://data-seed-prebsc-1-s1.binance.org:8545/
+   - **Chain ID**: 97
+   - **货币符号**: tBNB
+   - **区块浏览器**: https://testnet.bscscan.com
+
+#### Phantom 配置 (Solana Devnet)
+
+Phantom钱包默认支持Devnet：
+1. 打开Phantom钱包
+2. 点击左下角设置图标
+3. 选择"更改网络"
+4. 选择"Devnet"
+
+### 验证测试币
+
+**检查BNB余额**:
+```bash
+# 使用Hardhat脚本
+npx hardhat run scripts/check-balance.ts --network bnbTestnet
+```
+
+或在区块浏览器查看：
+- BNB: https://testnet.bscscan.com/address/<your_address>
+
+**检查Solana余额**:
+```bash
+# 使用Solana CLI
+solana balance <your_wallet_address> --url devnet
+```
+
+或在区块浏览器查看：
+- Solana: https://explorer.solana.com/?cluster=devnet
+
+### 常见问题
+
+**Q: 领水失败怎么办？**
+- 确保钱包切换到正确的测试网
+- 检查是否达到每日领水限额
+- 尝试其他领水渠道（Discord、其他水龙头）
+- 等待24小时后重试
+
+**Q: 测试币不够用怎么办？**
+- BNB Chain: 可在Discord向官方申请更多测试币
+- Solana: 使用CLI命令多次领取（有时间间隔限制）
+
+**Q: 领水后多久可以开始测试？**
+- BNB Chain: 通常1-5分钟内到账
+- Solana: 通常几秒钟内到账
+
+建议在部署和测试前确保钱包中有足够的测试币（建议至少保留1-2 tBNB或2-5 SOL用于Gas费）。
+
 ## 测试
 
 ```bash
