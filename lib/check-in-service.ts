@@ -35,20 +35,25 @@ export class CheckInService {
    * 使用 UTC+8 时区，一天只能打卡一次
    * @param walletAddress 钱包地址
    * @param data 打卡数据
+   * @param options 选项
+   * @param options.skipDailyCheck 是否跳过每日打卡检查（体验模式使用）
    * @returns 保存的记录ID
    * @throws 如果今天已经打卡，抛出错误
    */
   static async saveCheckIn(
     walletAddress: string,
-    data: Omit<DailyCheckIn, 'date' | 'timestamp'>
+    data: Omit<DailyCheckIn, 'date' | 'timestamp'>,
+    options?: { skipDailyCheck?: boolean }
   ): Promise<number> {
     try {
       const today = getTodayDateUTC8(); // 使用 UTC+8 时区的今天
 
-      // 检查今天是否已经打卡
-      const existing = await ReflectionService.getReflectionByDate(today, walletAddress);
-      if (existing) {
-        throw new Error('今天已经打过卡了，每天只能打卡一次');
+      // 检查今天是否已经打卡（体验模式下跳过）
+      if (!options?.skipDailyCheck) {
+        const existing = await ReflectionService.getReflectionByDate(today, walletAddress);
+        if (existing) {
+          throw new Error('今天已经打过卡了，每天只能打卡一次');
+        }
       }
 
       // 准备反思数据

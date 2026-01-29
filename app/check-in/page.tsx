@@ -45,6 +45,12 @@ export default function CheckInPage() {
   /** 检查今日是否已打卡 */
   useEffect(() => {
     const checkTodayStatus = async () => {
+      // 体验模式：不检查打卡状态，允许无限打卡
+      if (isSkipMode) {
+        setHasCheckedIn(false);
+        return;
+      }
+
       const effectiveAddress = address || demoAddress;
       if (!effectiveAddress) return;
 
@@ -60,7 +66,7 @@ export default function CheckInPage() {
     };
 
     checkTodayStatus();
-  }, [address, demoAddress]);
+  }, [address, demoAddress, isSkipMode]);
 
   /** 处理问题回答 */
   const handleQuestionAnswer = (answer: boolean) => {
@@ -145,13 +151,10 @@ export default function CheckInPage() {
         contentLength: content.length,
         hasStructuredData: !!structuredData,
         photosCount: photos.length,
+        isSkipMode,
       });
 
-      // 检查今天是否已经打卡
-      const todayCheckIn = await CheckInService.getTodayCheckIn(effectiveAddress);
-      const hasCheckedToday = !!todayCheckIn;
-
-      // 保存打卡数据（无论是否已打卡都会更新）
+      // 保存打卡数据（体验模式下跳过每日打卡检查）
       await CheckInService.saveCheckIn(effectiveAddress, {
         meaningful: isMeaningful,
         originalText: content,
@@ -163,15 +166,14 @@ export default function CheckInPage() {
           keywords: [],
         },
         photos,
-      });
+      }, isSkipMode ? { skipDailyCheck: true } : undefined);
 
-      console.log('[CheckInPage] 保存成功，是否已打卡:', hasCheckedToday);
+      console.log('[CheckInPage] 保存成功');
 
-      // 所有用户打卡成功后都跳转到 coming soon 页面（照片功能暂未开放）
+      // 打卡成功后设置状态，显示 Coming Soon 提示
       toast.success('打卡成功！');
-      setTimeout(() => {
-        router.push('/coming-soon');
-      }, 1500);
+      setStep('photo'); // 使用 photo 步骤来显示 Coming Soon 内容
+
     } catch (error) {
       console.error('[CheckInPage] 保存失败:', error);
       const errorMessage = error instanceof Error ? error.message : '保存失败，请重试';
@@ -356,15 +358,40 @@ export default function CheckInPage() {
                 <p className="text-ink/60">你的复盘已保存</p>
               </div>
 
-              <PhotoUpload
-                initialPhotos={photos}
-                onPhotosChange={setPhotos}
-              />
+              {/* 照片分享功能 Coming Soon */}
+              <div className="border-2 border-ink/20 bg-paper p-8 text-center">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.2, duration: 0.5 }}
+                  className="space-y-4"
+                >
+                  <div className="text-6xl">📸</div>
+                  <h3
+                    className="text-2xl font-bold text-ink"
+                    style={{ fontFamily: 'Georgia, serif' }}
+                  >
+                    照片分享功能
+                  </h3>
+                  <p className="text-ink/70" style={{ fontFamily: 'Georgia, serif' }}>
+                    记录生活中的精彩瞬间，与朋友们分享你的成长历程
+                  </p>
+                  <div
+                    className="inline-block px-6 py-3 bg-ink/10 text-ink font-bold border-2 border-ink/30"
+                    style={{ fontFamily: 'Georgia, serif' }}
+                  >
+                    Coming Soon
+                  </div>
+                  <p className="text-sm text-ink/50 mt-4" style={{ fontFamily: 'Georgia, serif' }}>
+                    敬请期待更多精彩功能
+                  </p>
+                </motion.div>
+              </div>
 
-              {/* 完成后导航选项 */}
+              {/* 导航选项 */}
               <div className="space-y-3">
                 <button
-                  onClick={handlePhotoComplete}
+                  onClick={() => router.push('/profile')}
                   className="w-full px-6 py-4 bg-ink text-paper font-bold text-lg hover:bg-ink/90 transition-colors"
                   style={{
                     borderRadius: 0,
@@ -393,7 +420,7 @@ export default function CheckInPage() {
                     fontFamily: 'Georgia, serif',
                   }}
                 >
-                  即将推出
+                  查看即将推出的功能
                 </button>
               </div>
             </motion.div>

@@ -233,7 +233,7 @@ export function CheckInTimeline({ limit = 10 }: CheckInTimelineProps) {
                     <div className="flex gap-2 mb-2 overflow-x-auto">
                       {reflection.photos.slice(0, 3).map((photo, photoIndex) => (
                         <div
-                          key={photoIndex}
+                          key={`${reflection.id}-photo-${photoIndex}`}
                           className="flex-shrink-0 w-16 h-16 rounded border-2 border-ink/20 overflow-hidden cursor-pointer hover:border-seal transition-colors"
                           onClick={(e) => {
                             e.stopPropagation();

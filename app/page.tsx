@@ -160,11 +160,9 @@ function HomePageContent() {
           const completed = await OnboardingService.hasCompletedOnboarding(address);
           setHasCompletedOnboarding(completed);
 
+          // 不自动跳转，只显示提示
           if (!completed) {
-            toast('请先完成人生规划问卷', { icon: '📋' });
-            setTimeout(() => {
-              router.push('/onboarding');
-            }, 1000);
+            toast('建议先完成人生规划问卷，以获得更好的体验', { icon: '💡' });
           }
         } catch (error) {
           console.error('[HomePage] Failed to check onboarding status:', error);
@@ -173,7 +171,7 @@ function HomePageContent() {
     };
 
     checkOnboardingStatus();
-  }, [address, isConnected, isSkipMode, effectiveAddress, router]);
+  }, [address, isConnected, isSkipMode, effectiveAddress]);
 
   // Truncate address for display
   const truncateAddress = (addr: string) => {
@@ -278,6 +276,17 @@ function HomePageContent() {
             >
               开始打卡
             </button>
+
+            {/* 人生规划按钮 - 如果未完成人生规划 */}
+            {!hasCompletedOnboarding && !isSkipMode && (
+              <button
+                onClick={() => router.push('/onboarding')}
+                className="w-full py-3 bg-white text-ink font-bold border-2 border-ink font-serif hover:bg-ink/5 transition-colors"
+                style={{ borderRadius: 0 }}
+              >
+                📋 人生规划问卷
+              </button>
+            )}
 
             {/* 状态显示 */}
             <div className="flex justify-between items-center p-4 border border-ink/20">

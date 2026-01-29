@@ -20,10 +20,10 @@ export default function ComingSoonPage() {
       {/* 页面头部 */}
       <div className="page-header">
         <button
-          onClick={() => router.push('/profile')}
+          onClick={() => router.push('/check-in')}
           className="back-button"
         >
-          ← 返回主页
+          ← 返回打卡
         </button>
 
         <div className="header-content">
