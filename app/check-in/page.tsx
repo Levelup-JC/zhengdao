@@ -171,7 +171,7 @@ export default function CheckInPage() {
         // 如果今天已经打过卡，直接跳转到导航页
         toast.success('打卡更新成功！');
         setTimeout(() => {
-          router.push('/');
+          router.push('/navigation');
         }, 1000);
       } else {
         // 第一次打卡，跳转到上传图片页
@@ -197,7 +197,7 @@ export default function CheckInPage() {
   const handlePhotoComplete = () => {
     toast.success('打卡完成！');
     setTimeout(() => {
-      router.push('/profile');
+      router.push('/navigation');
     }, 1500);
   };
 

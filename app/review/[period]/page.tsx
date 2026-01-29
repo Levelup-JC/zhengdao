@@ -242,6 +242,20 @@ export default function ReviewPeriodPage() {
   return (
     <div className="min-h-screen bg-[#FFFEF2] p-6">
       <div className="max-w-6xl mx-auto">
+        {/* 返回按钮 */}
+        <motion.button
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          onClick={() => router.push('/')}
+          className="mb-6 flex items-center gap-2 px-4 py-2 bg-white border-2 border-ink/30 text-ink font-bold hover:bg-ink/5 transition-colors"
+          style={{ borderRadius: 0, fontFamily: 'Georgia, serif' }}
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          返回主页
+        </motion.button>
+
         {/* 页面标题 */}
         <motion.div
           className="mb-8"

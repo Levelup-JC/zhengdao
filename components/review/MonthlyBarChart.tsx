@@ -128,7 +128,7 @@ export function MonthlyBarChart({ checkInData }: MonthlyBarChartProps) {
 
       {/* 柱状图容器 */}
       <div className="w-full overflow-x-auto">
-        <div className="min-w-[800px]">
+        <div className="w-full">
           {/* Y轴刻度线和标签 */}
           <div className="relative h-64 mb-2">
             {[0, 25, 50, 75, 100].map((percent) => {

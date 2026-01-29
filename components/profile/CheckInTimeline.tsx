@@ -221,7 +221,39 @@ export function CheckInTimeline({ limit = 10 }: CheckInTimelineProps) {
                     <span className="text-xs text-ink/40">
                       {reflection.rawContent.length} 字
                     </span>
+                    {reflection.photos && reflection.photos.length > 0 && (
+                      <span className="text-xs text-ink/40">
+                        📷 {reflection.photos.length}
+                      </span>
+                    )}
                   </div>
+
+                  {/* 照片预览 */}
+                  {reflection.photos && reflection.photos.length > 0 && (
+                    <div className="flex gap-2 mb-2 overflow-x-auto">
+                      {reflection.photos.slice(0, 3).map((photo, photoIndex) => (
+                        <div
+                          key={photoIndex}
+                          className="flex-shrink-0 w-16 h-16 rounded border-2 border-ink/20 overflow-hidden cursor-pointer hover:border-seal transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // 可以添加点击放大功能
+                          }}
+                        >
+                          <img
+                            src={`data:image/jpeg;base64,${photo}`}
+                            alt={`Photo ${photoIndex + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                      {reflection.photos.length > 3 && (
+                        <div className="flex-shrink-0 w-16 h-16 rounded border-2 border-ink/20 bg-ink/5 flex items-center justify-center text-xs text-ink/60">
+                          +{reflection.photos.length - 3}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* 摘要 */}
                   <p className="text-xs text-ink/80 leading-relaxed break-words">
