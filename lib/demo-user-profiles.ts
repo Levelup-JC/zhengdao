@@ -166,11 +166,11 @@ function createUserProfile(index: number, targetLevel: number, requiredDays: num
     name: fullName,
     avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${id}`,
     joinDate,
-    activityLevel: selectWeighted(ACTIVITY_DISTRIBUTIONS),
-    writingStyle: selectWeighted(WRITING_DISTRIBUTIONS),
+    activityLevel: selectWeighted(ACTIVITY_DISTRIBUTIONS).level as 'high' | 'medium' | 'low',
+    writingStyle: selectWeighted(WRITING_DISTRIBUTIONS).style as 'detailed' | 'concise' | 'balanced',
     interests: INTEREST_COMBINATIONS[Math.floor(Math.random() * INTEREST_COMBINATIONS.length)],
-    baseEmotion: selectWeighted(EMOTION_DISTRIBUTIONS),
-    personalityType: selectWeighted(PERSONALITY_DISTRIBUTIONS),
+    baseEmotion: selectWeighted(EMOTION_DISTRIBUTIONS).emotion as EmotionType,
+    personalityType: selectWeighted(PERSONALITY_DISTRIBUTIONS).type as 'optimistic' | 'neutral' | 'pessimistic',
     targetLevel,
     currentLevel: Math.min(targetLevel, calculateCurrentLevel(requiredDays)),
     checkInDays: requiredDays,
@@ -191,7 +191,8 @@ function generateMockWalletAddress(index: number): string {
  */
 function selectWeighted<T extends { weight: number }>(distribution: T[]): T {
   const totalWeight = distribution.reduce((sum, item) => sum + item.weight, 0);
-  return selectFromDistribution(distribution.map(d => d.weight), totalWeight) as any;
+  const index = selectFromDistribution(distribution.map(d => d.weight), totalWeight);
+  return distribution[index];
 }
 
 /**

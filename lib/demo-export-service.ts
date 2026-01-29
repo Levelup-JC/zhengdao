@@ -56,7 +56,14 @@ export class DemoExportService {
       }
 
       // 动态导入 html2canvas
-      const html2canvas = (await import('html2canvas')).default;
+      let html2canvas: any;
+      try {
+        // @ts-ignore - html2canvas 是可选依赖
+        const module = await import('html2canvas');
+        html2canvas = module.default || module;
+      } catch (importError) {
+        throw new Error('html2canvas 库未安装。请运行: npm install html2canvas');
+      }
 
       const canvas = await html2canvas(element, {
         backgroundColor: '#FFFEF2',

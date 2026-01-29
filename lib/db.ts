@@ -41,6 +41,8 @@ export interface Reflection {
   createdAt: Date;
   /** 最后更新时间 */
   updatedAt: Date;
+  /** 照片数组（Base64编码） */
+  photos?: string[];
 }
 
 /**

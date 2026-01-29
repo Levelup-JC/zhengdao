@@ -16,9 +16,13 @@ import {
   generateDemoUsers,
   getCheckInProbability,
   getMeaningfulProbability,
-  generateEmotionTrend,
 } from './demo-user-profiles';
-import { selectTemplate, fillTemplate, generateKeywords } from './demo-content-templates';
+import {
+  selectTemplate,
+  fillTemplate,
+  generateKeywords,
+  generateEmotionTrend,
+} from './demo-content-templates';
 
 /**
  * 演示数据生成器
@@ -146,8 +150,8 @@ export class DemoDataGenerator {
     const keywords = generateKeywords(user.interests, template.keywords);
 
     // 根据写作风格决定内容长度
-    const gainsLength = this.writingStyle === 'detailed' ? 3 : 2;
-    const lossesLength = this.writingStyle === 'detailed' ? 3 : 1;
+    const gainsLength = user.writingStyle === 'detailed' ? 3 : 2;
+    const lossesLength = user.writingStyle === 'detailed' ? 3 : 1;
     const ideasLength = 2;
 
     return {

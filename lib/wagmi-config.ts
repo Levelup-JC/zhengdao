@@ -14,7 +14,7 @@ if (process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID) {
   connectors.push(
     walletConnect({
       projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
-    })
+    }) as any
   );
 }
 
@@ -24,7 +24,7 @@ export const wagmiConfig = createConfig({
   connectors,
   transports: {
     [activeChain.id]: http(),
-  },
+  } as any,
   ssr: true,
 });
 

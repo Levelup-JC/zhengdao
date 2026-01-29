@@ -3,7 +3,11 @@
  * 用于生成虚拟用户和历史数据，支持营销和推广场景
  */
 
-import { Reflection, StructuredReflectionData, UserAchievement } from './achievement';
+import { Reflection, StructuredReflectionData } from '@/lib/db';
+import { UserAchievement } from './achievement';
+
+// 重新导出类型供其他模块使用
+export type { Reflection, StructuredReflectionData };
 
 /**
  * 虚拟用户画像
@@ -55,7 +59,7 @@ export type ContentTheme =
  */
 export interface ContentTemplate {
   theme: ContentTheme;
-  style: 'detailed' | 'concise';
+  style: 'detailed' | 'concise' | 'balanced';
   template: string; // 包含占位符的模板
   defaultEmotion: EmotionType;
   keywords: string[];

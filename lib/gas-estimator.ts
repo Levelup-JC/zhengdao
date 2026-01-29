@@ -56,7 +56,7 @@ export async function estimateBSCGas(
     // 估算Gas限制
     const gasLimit = await readContract(wagmiConfig, {
       address: contractAddress as `0x${string}`,
-      abi: ZHENGDAO_ABI,
+      abi: ZHENGDAO_ABI as any,
       functionName: 'mintSBT',
       args: [
         '0x0000000000000000000000000000000000000001' as `0x${string}`, // 示例地址
@@ -64,7 +64,7 @@ export async function estimateBSCGas(
         BigInt(days),
         metadataURI,
       ],
-    });
+    } as any);
 
     // 根据主网/测试网设置不同的 Gas 价格
     // 测试网: 3 Gwei, 主网: 5 Gwei

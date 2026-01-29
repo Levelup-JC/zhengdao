@@ -37,10 +37,11 @@ const LEVEL_COLORS: Record<number, string> = {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { level: string } }
+  { params }: { params: Promise<{ level: string }> }
 ) {
   try {
-    const level = parseInt(params.level);
+    const { level: levelParam } = await params;
+    const level = parseInt(levelParam);
 
     // 验证等级是否有效
     if (isNaN(level) || level < 1 || level > 6) {
