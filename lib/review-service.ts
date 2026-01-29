@@ -7,6 +7,7 @@
 import { CheckInData, filterDataByPeriod, calculateYesNoRatio, generateTrendData, aggregateMeaningfulDays } from './chart-utils';
 import { db } from './db';
 import { generateAIResponse } from './ai-service';
+import { demoReflections, demoLifeGoal } from './demo-data';
 
 export interface ReviewStats {
   totalDays: number;
@@ -21,9 +22,62 @@ export interface ReviewStats {
 
 
 /**
+ * 获取体验模式的统计数据（使用演示数据）
+ */
+function getDemoReviewStats(period: '7d' | '30d' | '6m' | '1y'): ReviewStats {
+  // 使用所有58天演示数据
+  const allData = demoReflections.map(item => ({
+    id: item.date,
+    date: item.date,
+    meaningful: item.isMeaningful,
+    originalText: item.rawContent,
+    wordCount: item.rawContent.length,
+    createdAt: item.createdAt.getTime(),
+  }));
+
+  // 根据周期筛选数据
+  const filteredData = filterDataByPeriod(allData, period);
+
+  // 计算统计（与原逻辑相同）
+  const { yes, no } = calculateYesNoRatio(filteredData);
+  const totalDays = yes + no;
+  const yesRatio = totalDays > 0 ? (yes / totalDays) * 100 : 0;
+
+  const totalWords = filteredData.reduce((sum, item) => sum + item.wordCount, 0);
+  const avgWords = totalDays > 0 ? Math.round(totalWords / totalDays) : 0;
+
+  const meaningfulSummaries = filteredData
+    .filter(item => item.meaningful)
+    .slice(0, 5)
+    .map(item => item.originalText);
+
+  const dailyData = filteredData.map(item => ({
+    date: new Date(item.createdAt).toISOString().split('T')[0],
+    isMeaningful: item.meaningful,
+  }));
+
+  return {
+    totalDays,
+    yesDays: yes,
+    noDays: no,
+    yesRatio,
+    totalWords,
+    avgWords,
+    meaningfulSummaries,
+    dailyData,
+  };
+}
+
+
+/**
  * 获取指定周期的统计数据
  */
-export async function getReviewStats(period: '7d' | '30d' | '6m' | '1y', walletAddress: string): Promise<ReviewStats> {
+export async function getReviewStats(period: '7d' | '30d' | '6m' | '1y', walletAddress: string, isSkipMode: boolean = false): Promise<ReviewStats> {
+  // 体验模式：使用演示数据
+  if (isSkipMode) {
+    return getDemoReviewStats(period);
+  }
+
   // 从数据库获取所有反思数据
   const allReflections = await db.reflections
     .where('walletAddress')
@@ -172,9 +226,56 @@ ${stats.totalDays < 7 ? '💡 提示：打卡天数较少，建议坚持记录�
 }
 
 /**
+ * 获取体验模式的目标对比数据（使用演示数据）
+ */
+function getDemoGoalComparison() {
+  const currentYear = new Date().getFullYear();
+  const yearReflections = demoReflections.filter(item => {
+    return new Date(item.date).getFullYear() === currentYear;
+  });
+
+  // 按月聚合
+  const monthlyData = Array.from({ length: 12 }, (_, index) => {
+    const monthReflections = yearReflections.filter(item => {
+      return new Date(item.date).getMonth() === index;
+    });
+
+    const monthTotal = monthReflections.length;
+    const monthMeaningful = monthReflections.filter(item => item.isMeaningful).length;
+    const monthRatio = monthTotal > 0 ? (monthMeaningful / monthTotal) * 100 : 0;
+
+    return {
+      month: `${index + 1}月`,
+      total: monthTotal,
+      meaningful: monthMeaningful,
+      ratio: monthRatio,
+    };
+  });
+
+  const totalDays = yearReflections.length;
+  const meaningfulDays = yearReflections.filter(item => item.isMeaningful).length;
+  const meaningfulRatio = totalDays > 0 ? (meaningfulDays / totalDays) * 100 : 0;
+
+  return {
+    goals: [demoLifeGoal],
+    yearlyStats: {
+      totalDays,
+      meaningfulDays,
+      meaningfulRatio,
+    },
+    monthlyData,
+  };
+}
+
+/**
  * 获取目标对比数据（年度复盘专用）
  */
-export async function getGoalComparisonData(walletAddress?: string) {
+export async function getGoalComparisonData(walletAddress?: string, isSkipMode: boolean = false) {
+  // 体验模式：使用演示数据
+  if (isSkipMode) {
+    return getDemoGoalComparison();
+  }
+
   // 获取用户设定的目标
   const goals = walletAddress
     ? await db.lifeGoals.where('walletAddress').equals(walletAddress).toArray()

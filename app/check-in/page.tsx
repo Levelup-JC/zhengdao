@@ -168,10 +168,10 @@ export default function CheckInPage() {
       console.log('[CheckInPage] 保存成功，是否已打卡:', hasCheckedToday);
 
       if (hasCheckedToday) {
-        // 如果今天已经打过卡，直接跳转到导航页
+        // 如果今天已经打过卡，直接跳转到个人主页
         toast.success('打卡更新成功！');
         setTimeout(() => {
-          router.push('/navigation');
+          router.push('/profile');
         }, 1000);
       } else {
         // 第一次打卡，跳转到上传图片页
@@ -197,7 +197,7 @@ export default function CheckInPage() {
   const handlePhotoComplete = () => {
     toast.success('打卡完成！');
     setTimeout(() => {
-      router.push('/navigation');
+      router.push('/profile');
     }, 1500);
   };
 
@@ -213,11 +213,11 @@ export default function CheckInPage() {
             请先连接钱包或返回首页选择体验模式
           </h1>
           <button
-            onClick={() => router.push('/navigation')}
+            onClick={() => router.push('/profile')}
             className="px-6 py-3 bg-ink text-paper font-bold"
             style={{ borderRadius: 0, fontFamily: 'Georgia, serif' }}
           >
-            返回导航
+            返回主页
           </button>
         </div>
       </div>
@@ -253,11 +253,11 @@ export default function CheckInPage() {
           {/* 功能导航按钮 */}
           <div className="space-y-3">
             <button
-              onClick={() => router.push('/navigation')}
+              onClick={() => router.push('/profile')}
               className="w-full px-6 py-4 bg-ink text-paper font-bold text-lg hover:bg-ink/90 transition-colors"
               style={{ borderRadius: 0, fontFamily: 'Georgia, serif' }}
             >
-              功能导航
+              个人主页
             </button>
 
             <button
@@ -310,7 +310,7 @@ export default function CheckInPage() {
               initialValue={content}
               structuredData={structuredData}
               onSubmit={handleContentSubmit}
-              onCancel={() => router.push('/navigation')}
+              onCancel={() => router.push('/profile')}
             />
           )}
 
@@ -377,7 +377,7 @@ export default function CheckInPage() {
                     fontFamily: 'Georgia, serif',
                   }}
                 >
-                  功能导航
+                  个人主页
                 </button>
 
                 <button
