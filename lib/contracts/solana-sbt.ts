@@ -22,7 +22,7 @@ import { createSolanaConnection, getSolanaRPCUrl } from '../solana-wallet';
  * ⚠️ 占位符 Program ID，用于 V2 功能
  */
 const SBT_PROGRAM_ID = new PublicKey(
-  process.env.NEXT_PUBLIC_SOLANA_SBT_PROGRAM_ID || 'zhengDComingSoon1111111111111111111111111'
+  process.env.NEXT_PUBLIC_SOLANA_SBT_PROGRAM_ID || '11111111111111111111111111111111'
 );
 
 /**
@@ -31,8 +31,8 @@ const SBT_PROGRAM_ID = new PublicKey(
  */
 export function isSolanaSBTAvailable(): boolean {
   const programId = process.env.NEXT_PUBLIC_SOLANA_SBT_PROGRAM_ID || '';
-  // 检查是否为占位符 Program ID
-  return !programId.includes('ComingSoon') && programId.length > 0;
+  // 检查是否配置了有效的 Program ID（不是默认的 System Program ID）
+  return programId.length > 0 && programId !== '11111111111111111111111111111111';
 }
 
 /**
