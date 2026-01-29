@@ -90,7 +90,7 @@ export default function GoalComparison({ goals, yearlyStats, analysis, isLoading
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.5 }}
         >
-          <div className="text-2xl font-bold mb-1 text-[#D43628]" style={{ fontFamily: 'Georgia, serif' }}>
+          <div className="text-lg font-bold mb-1 text-[#D43628]" style={{ fontFamily: 'Georgia, serif' }}>
             {yearlyStats.meaningfulRatio.toFixed(1)}%
           </div>
           <div className="text-xs text-black/50" style={{ fontFamily: 'Georgia, serif' }}>

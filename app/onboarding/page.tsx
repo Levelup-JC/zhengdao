@@ -111,9 +111,9 @@ export default function OnboardingPage() {
 
       toast.success('目标设定成功！开始你的证道之旅吧');
 
-      // 延迟跳转到主页
+      // 延迟跳转到打卡页
       setTimeout(() => {
-        router.push('/');
+        router.push('/check-in');
       }, 1500);
     } catch (error) {
       console.error('[Onboarding] 保存失败:', error);

@@ -100,14 +100,14 @@ export default function ProfilePage() {
             请先连接钱包
           </h1>
           <p className="text-ink/60" style={{ fontFamily: 'Georgia, serif' }}>
-            或返回首页选择体验模式
+            或返回导航页选择体验模式
           </p>
           <button
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/navigation')}
             className="px-6 py-3 bg-ink text-paper font-bold"
             style={{ borderRadius: 0, fontFamily: 'Georgia, serif' }}
           >
-            返回首页
+            返回导航
           </button>
         </div>
       </div>

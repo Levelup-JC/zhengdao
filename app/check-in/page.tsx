@@ -213,11 +213,11 @@ export default function CheckInPage() {
             请先连接钱包或返回首页选择体验模式
           </h1>
           <button
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/navigation')}
             className="px-6 py-3 bg-ink text-paper font-bold"
             style={{ borderRadius: 0, fontFamily: 'Georgia, serif' }}
           >
-            返回首页
+            返回导航
           </button>
         </div>
       </div>
@@ -253,11 +253,11 @@ export default function CheckInPage() {
           {/* 功能导航按钮 */}
           <div className="space-y-3">
             <button
-              onClick={() => router.push('/profile')}
+              onClick={() => router.push('/navigation')}
               className="w-full px-6 py-4 bg-ink text-paper font-bold text-lg hover:bg-ink/90 transition-colors"
               style={{ borderRadius: 0, fontFamily: 'Georgia, serif' }}
             >
-              个人主页
+              功能导航
             </button>
 
             <button
@@ -274,14 +274,6 @@ export default function CheckInPage() {
               style={{ borderRadius: 0, fontFamily: 'Georgia, serif' }}
             >
               即将推出
-            </button>
-
-            <button
-              onClick={() => router.push('/')}
-              className="w-full px-6 py-3 bg-transparent text-ink/70 font-medium hover:text-ink transition-colors"
-              style={{ borderRadius: 0, fontFamily: 'Georgia, serif' }}
-            >
-              返回首页
             </button>
           </div>
         </div>
@@ -318,7 +310,7 @@ export default function CheckInPage() {
               initialValue={content}
               structuredData={structuredData}
               onSubmit={handleContentSubmit}
-              onCancel={() => router.push('/')}
+              onCancel={() => router.push('/navigation')}
             />
           )}
 
@@ -385,7 +377,7 @@ export default function CheckInPage() {
                     fontFamily: 'Georgia, serif',
                   }}
                 >
-                  个人主页
+                  功能导航
                 </button>
 
                 <button
@@ -408,14 +400,6 @@ export default function CheckInPage() {
                   }}
                 >
                   即将推出
-                </button>
-
-                <button
-                  onClick={() => router.push('/')}
-                  className="w-full px-6 py-3 bg-transparent text-ink/70 font-medium hover:text-ink transition-colors"
-                  style={{ borderRadius: 0, fontFamily: 'Georgia, serif' }}
-                >
-                  返回首页
                 </button>
               </div>
             </motion.div>
