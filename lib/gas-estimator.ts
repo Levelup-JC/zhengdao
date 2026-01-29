@@ -32,16 +32,24 @@ export async function estimateBSCGas(
 ): Promise<GasEstimate> {
   try {
     const contractAddress = process.env.NEXT_PUBLIC_ZHENGDAO_SBT_ADDRESS;
+    const isTestnet = process.env.NEXT_PUBLIC_BNB_CHAIN_TESTNET === 'true';
 
     if (!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') {
       // 合约未部署，返回默认估算
+      // 测试网 Gas 费通常更低
+      const gasPriceGwei = isTestnet ? 3 : 5;
+      const gasLimit = 150000;
+      const gasPriceWei = gasPriceGwei * 1e9;
+      const estimatedFeeWei = gasLimit * gasPriceWei;
+      const estimatedFeeBNB = estimatedFeeWei / 1e18;
+
       return {
         chain: 'bnb',
-        estimatedFee: '~0.00075',
-        estimatedFeeRaw: 0.00075,
+        estimatedFee: `~${estimatedFeeBNB.toFixed(6)}`,
+        estimatedFeeRaw: estimatedFeeBNB,
         currency: 'BNB',
-        gasLimit: 150000,
-        gasPrice: '5 Gwei',
+        gasLimit,
+        gasPrice: `${gasPriceGwei} Gwei`,
       };
     }
 
@@ -58,8 +66,9 @@ export async function estimateBSCGas(
       ],
     });
 
-    // 假设Gas价格为5 Gwei (BSC主网通常价格)
-    const gasPriceGwei = 5;
+    // 根据主网/测试网设置不同的 Gas 价格
+    // 测试网: 3 Gwei, 主网: 5 Gwei
+    const gasPriceGwei = isTestnet ? 3 : 5;
     const gasPriceWei = gasPriceGwei * 1e9; // 转换为Wei
     const gasLimitNumber = typeof gasLimit === 'bigint' ? Number(gasLimit) : 150000;
     const estimatedFeeWei = gasLimitNumber * gasPriceWei;
@@ -71,18 +80,20 @@ export async function estimateBSCGas(
       estimatedFeeRaw: estimatedFeeBNB,
       currency: 'BNB',
       gasLimit: gasLimitNumber,
-      gasPrice: `${gasPriceGwei} Gwei`,
+      gasPrice: `${gasPriceGwei} Gwei (${isTestnet ? '测试网' : '主网'})`,
     };
   } catch (error) {
     console.error('[GasEstimator] BSC Gas估算失败:', error);
-    // 返回保守估算
+    // 返回保守估算（主网使用更高的估算）
+    const isTestnet = process.env.NEXT_PUBLIC_BNB_CHAIN_TESTNET === 'true';
+    const gasPriceGwei = isTestnet ? 4 : 6;
     return {
       chain: 'bnb',
-      estimatedFee: '~0.001',
-      estimatedFeeRaw: 0.001,
+      estimatedFee: isTestnet ? '~0.0006' : '~0.0012',
+      estimatedFeeRaw: isTestnet ? 0.0006 : 0.0012,
       currency: 'BNB',
       gasLimit: 200000,
-      gasPrice: '5 Gwei',
+      gasPrice: `${gasPriceGwei} Gwei`,
     };
   }
 }

@@ -438,6 +438,23 @@ export function ClaimSBTFlow({
               </div>
             )}
 
+            {/* 网络状态提示 */}
+            <div className={`network-status-banner ${process.env.NEXT_PUBLIC_BNB_CHAIN_TESTNET === 'true' ? 'testnet' : 'mainnet'}`}>
+              <div className="network-status-header">
+                <span className="network-icon">{process.env.NEXT_PUBLIC_BNB_CHAIN_TESTNET === 'true' ? '🧪' : '🚀'}</span>
+                <span className="network-title">
+                  {process.env.NEXT_PUBLIC_BNB_CHAIN_TESTNET === 'true' ? '测试网模式' : '主网模式'}
+                </span>
+              </div>
+              <div className="network-status-content">
+                {process.env.NEXT_PUBLIC_BNB_CHAIN_TESTNET === 'true' ? (
+                  <span className="network-note">当前为 BSC 测试网 (Chain ID: 97)，使用测试币进行交易</span>
+                ) : (
+                  <span className="network-note">当前为 BSC 主网 (Chain ID: 56)，使用真实 BNB 进行交易</span>
+                )}
+              </div>
+            </div>
+
             {/* Gas费估算 */}
             {gasEstimate && (
               <div className="gas-estimate-banner">
@@ -836,6 +853,65 @@ export function ClaimSBTFlow({
 
         .condition-item .unmet {
           color: #EF4444;
+        }
+
+        .network-status-banner {
+          padding: 1.25rem;
+          border: 2px solid;
+          margin-bottom: 1rem;
+        }
+
+        .network-status-banner.testnet {
+          background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+          border-color: #3b82f6;
+        }
+
+        .network-status-banner.mainnet {
+          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+          border-color: #f59e0b;
+        }
+
+        .network-status-header {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin-bottom: 0.75rem;
+        }
+
+        .network-icon {
+          font-size: 1.25rem;
+        }
+
+        .network-title {
+          font-size: 1rem;
+          font-weight: 700;
+          font-family: 'Georgia', serif;
+        }
+
+        .network-status-banner.testnet .network-title {
+          color: #1e40af;
+        }
+
+        .network-status-banner.mainnet .network-title {
+          color: #92400e;
+        }
+
+        .network-status-content {
+          display: flex;
+          align-items: center;
+        }
+
+        .network-note {
+          font-size: 0.875rem;
+          font-style: italic;
+        }
+
+        .network-status-banner.testnet .network-note {
+          color: #1e3a8a;
+        }
+
+        .network-status-banner.mainnet .network-note {
+          color: #78350f;
         }
 
         .gas-estimate-banner {
