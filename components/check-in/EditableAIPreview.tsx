@@ -333,9 +333,9 @@ function EditableSection({
   subtitle: string;
   items: string[];
   field: 'gains' | 'losses' | 'ideas' | 'insights' | 'actions' | 'keywords';
-  onAdd: (field: typeof field) => void;
-  onUpdate: (field: typeof field, index: number, value: string) => void;
-  onRemove: (field: typeof field, index: number) => void;
+  onAdd: (field: 'gains' | 'losses' | 'ideas' | 'insights' | 'actions' | 'keywords') => void;
+  onUpdate: (field: 'gains' | 'losses' | 'ideas' | 'insights' | 'actions' | 'keywords', index: number, value: string) => void;
+  onRemove: (field: 'gains' | 'losses' | 'ideas' | 'insights' | 'actions' | 'keywords', index: number) => void;
   icon?: string;
   highlight?: boolean;
 }) {

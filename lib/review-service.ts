@@ -8,7 +8,7 @@ import { CheckInData, filterDataByPeriod, calculateYesNoRatio, generateTrendData
 import { db } from './db';
 import { generateAIResponse } from './ai-service';
 
-interface ReviewStats {
+export interface ReviewStats {
   totalDays: number;
   yesDays: number;
   noDays: number;

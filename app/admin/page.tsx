@@ -457,7 +457,6 @@ export default function AdminPage() {
                 </p>
               </div>
             </div>
-          </div>
         </motion.div>
         )}
 

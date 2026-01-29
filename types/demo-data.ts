@@ -178,3 +178,21 @@ export interface DataQualityMetrics {
   averageWordCount: number;
   qualityScore: number; // 质量评分（0-100）
 }
+
+/**
+ * 默认演示数据配置
+ */
+export const DEFAULT_DEMO_CONFIG: DemoDataConfig = {
+  userCount: 100,
+  daysPerUser: 60,
+  levelDistribution: [40, 25, 15, 10, 7, 3], // L1:40%, L2:25%, L3:15%, L4:10%, L5:7%, L6:3%
+  emotionDistribution: {
+    '积极': 50,
+    '平静': 30,
+    '焦虑': 12,
+    '疲惫': 8
+  },
+  checkInProbability: 0.8,
+  meaningfulProbability: 0.7,
+  startDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000) // 60天前
+};

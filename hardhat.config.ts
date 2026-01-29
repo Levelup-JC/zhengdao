@@ -35,6 +35,12 @@ const config: HardhatUserConfig = {
       url: process.env.BNB_MAINNET_RPC_URL || "https://bsc-dataseed.binance.org/",
       chainId: 56,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
+    },
+    // 别名：bnbMainnet (用于主网部署脚本)
+    bnbMainnet: {
+      url: process.env.BNB_MAINNET_RPC_URL || "https://bsc-dataseed.binance.org/",
+      chainId: 56,
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
     }
   },
   paths: {
@@ -47,7 +53,8 @@ const config: HardhatUserConfig = {
   etherscan: {
     apiKey: {
       bscTestnet: process.env.BSCSCAN_API_KEY || "",
-      bsc: process.env.BSCSCAN_API_KEY || ""
+      bsc: process.env.BSCSCAN_API_KEY || "",
+      bnbMainnet: process.env.BSCSCAN_API_KEY || ""
     }
   }
 };
