@@ -388,3 +388,5 @@ MIT License
 
 **最后更新**: 2026-01-27
 **维护者**: 证道开发团队
+
+<!-- Force Vercel rebuild - Next.js 16.1.6 deployment -->
