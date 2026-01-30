@@ -215,7 +215,7 @@ export async function shouldGenerateDemoData(walletAddress: string): Promise<boo
 // ============================================================================
 
 /**
- * 演示用户的人生目标
+ * 演示用户的人生目标（单数形式，保持兼容）
  */
 export const demoLifeGoal: LifeGoal = {
   walletAddress: '0x0000000000000000000000000000000000000000',
@@ -241,6 +241,73 @@ export const demoLifeGoal: LifeGoal = {
   },
   createdAt: new Date('2025-01-01'),
   updatedAt: new Date('2025-01-01'),
+};
+
+/**
+ * 演示用户的人生规划列表（复数形式，用于体验模式）
+ * 包含至少2条预设的人生目标
+ */
+export const demoLifeGoals: LifeGoal[] = [
+  {
+    walletAddress: '0x0000000000000000000000000000000000000000',
+    wealthGoals: {
+      monthlyIncome: '月收入5万元',
+      savings: '存款达到100万',
+      investmentReturn: '年化收益率15%',
+    },
+    healthGoals: {
+      exerciseFrequency: '每周健身4次',
+      weightManagement: '体重保持在70kg',
+      sleepQuality: '每天保证7小时睡眠',
+    },
+    familyGoals: {
+      familyTime: '每周至少2次家庭聚餐',
+      parentChildRelationship: '每月一次亲子旅行',
+      partnerRelationship: '每周一次约会之夜',
+    },
+    otherGoals: {
+      learningGoals: ['学习Rust开发', '阅读50本书', '掌握AI应用'],
+      socialGoals: ['参加10场行业会议', '建立100+人脉网络'],
+      hobbies: ['摄影', '吉他', '登山'],
+    },
+    createdAt: new Date('2025-01-01'),
+    updatedAt: new Date('2025-01-15'),
+  },
+  {
+    walletAddress: '0x0000000000000000000000000000000000000000',
+    wealthGoals: {
+      monthlyIncome: '月收入8万元',
+      savings: '存款达到200万',
+      investmentReturn: '年化收益率20%',
+    },
+    healthGoals: {
+      exerciseFrequency: '每周健身5次',
+      weightManagement: '体重保持在68kg',
+      sleepQuality: '每天保证8小时睡眠',
+    },
+    familyGoals: {
+      familyTime: '每周至少3次家庭聚餐',
+      parentChildRelationship: '每月两次亲子旅行',
+      partnerRelationship: '每周两次约会之夜',
+    },
+    otherGoals: {
+      learningGoals: ['掌握Web3开发', '完成AI课程', '学习投资理财'],
+      socialGoals: ['建立优质人脉圈', '参与开源项目'],
+      hobbies: ['跑步', '烹饪', '写作'],
+    },
+    createdAt: new Date('2025-01-01'),
+    updatedAt: new Date('2025-01-20'),
+  },
+];
+
+/**
+ * 演示用户配置（虚拟用户信息）
+ */
+export const demoUserProfile = {
+  name: '体验用户',
+  avatar: '/images/avatars/default.png',
+  level: 3, // 当前等级
+  sbtLevel: 2, // 已铸造的 SBT 等级
 };
 
 /**
@@ -410,6 +477,15 @@ function generateRawContent(dayIndex: number, isMeaningful: boolean): string {
 export const demoReflections: Reflection[] = generateStaticDemoReflections(58).reverse();
 
 /**
+ * 预设的打卡历史（至少6条，用于体验模式）
+ * 导出为 demoCheckInHistory 以符合任务要求
+ */
+export const demoCheckInHistory: Reflection[] = demoReflections.slice(-6).map(ref => ({
+  ...ref,
+  rawContent: `【${new Date(ref.date).toLocaleDateString('zh-CN')}】${ref.rawContent.split('\n')[0] || ref.structuredData.gains.join('、')}`,
+}));
+
+/**
  * 演示个人主页数据
  * 用于游客模式展示完整的个人主页
  */
@@ -421,3 +497,136 @@ export const demoProfileData: ProfileData = {
   meaningfulRate: 78,
   currentStreak: 12,
 };
+
+// ============================================================================
+// 动态数据生成函数（用于体验模式）
+// ============================================================================
+
+/**
+ * 生成体验模式的复盘数据
+ * 根据请求的时长精确生成对应天数的复盘分析数据
+ * @param period 天数（如 7、30、90、365）
+ * @param checkIns 打卡记录数组（可选，不传则使用预设历史）
+ * @returns 复盘统计数据
+ */
+export function generateDemoReviewData(
+  period: number,
+  checkIns?: Reflection[]
+): {
+  totalDays: number;
+  meaningfulDays: number;
+  meaningfulRate: number;
+  avgWords: number;
+  dailyData: Array<{ date: string; isMeaningful: boolean }>;
+  meaningfulSummaries: string[];
+} {
+  // 使用传入的打卡记录，或使用预设历史
+  const reflections = checkIns || demoCheckInHistory;
+
+  // 截取指定天数的数据（确保不超过请求的天数）
+  const slicedData = reflections.slice(-period);
+
+  // 计算统计数据
+  const totalDays = slicedData.length;
+  const meaningfulDays = slicedData.filter(r => r.isMeaningful).length;
+  const meaningfulRate = totalDays > 0 ? Math.round((meaningfulDays / totalDays) * 100) : 0;
+
+  // 计算平均字数
+  const totalWords = slicedData.reduce((sum, r) => sum + r.rawContent.length, 0);
+  const avgWords = totalDays > 0 ? Math.round(totalWords / totalDays) : 0;
+
+  // 生成每日数据
+  const dailyData = slicedData.map(r => ({
+    date: r.date,
+    isMeaningful: r.isMeaningful,
+  }));
+
+  // 提取有意义日子的复盘摘要（最多5条）
+  const meaningfulSummaries = slicedData
+    .filter(r => r.isMeaningful)
+    .slice(0, 5)
+    .map(r => r.rawContent);
+
+  return {
+    totalDays,
+    meaningfulDays,
+    meaningfulRate,
+    avgWords,
+    dailyData,
+    meaningfulSummaries,
+  };
+}
+
+/**
+ * 合并用户的打卡记录
+ * 将体验模式下的新打卡记录与预设历史合并
+ * @param newCheckIn 用户的新打卡记录
+ * @returns 合并后的打卡记录数组
+ */
+export function getMergedCheckIns(newCheckIn: Reflection): Reflection[] {
+  // 创建预设历史的副本
+  const merged = [...demoCheckInHistory];
+
+  // 添加新打卡记录
+  merged.push(newCheckIn);
+
+  // 按日期排序
+  merged.sort((a, b) => a.date.localeCompare(b.date));
+
+  // 保持数组长度为7（6条预设 + 1条新打卡）
+  // 如果超过7条，移除最旧的
+  if (merged.length > 7) {
+    merged.splice(0, merged.length - 7);
+  }
+
+  return merged;
+}
+
+/**
+ * 生成体验模式的个人主页数据
+ * @param newCheckIn 用户的新打卡记录（可选）
+ * @returns 个人主页数据
+ */
+export function generateDemoProfileData(newCheckIn?: Reflection): ProfileData {
+  // 合并打卡记录
+  const mergedReflections = newCheckIn
+    ? getMergedCheckIns(newCheckIn)
+    : demoCheckInHistory;
+
+  // 使用第一条人生规划
+  const goals = demoLifeGoals[0];
+
+  // 计算统计数据
+  const totalCheckInDays = mergedReflections.length;
+  const meaningfulDays = mergedReflections.filter(r => r.isMeaningful).length;
+  const meaningfulRate = totalCheckInDays > 0
+    ? Math.round((meaningfulDays / totalCheckInDays) * 100)
+    : 0;
+
+  // 计算连续打卡天数
+  let currentStreak = 0;
+  const sortedReflections = [...mergedReflections].sort((a, b) => b.date.localeCompare(a.date));
+  const today = new Date().toISOString().split('T')[0];
+
+  for (let i = 0; i < sortedReflections.length; i++) {
+    const ref = sortedReflections[i];
+    const refDate = new Date(ref.date);
+    const expectedDate = new Date(today);
+    expectedDate.setDate(expectedDate.getDate() - i);
+
+    if (ref.date === expectedDate.toISOString().split('T')[0]) {
+      currentStreak++;
+    } else {
+      break;
+    }
+  }
+
+  return {
+    goals,
+    recentReflections: mergedReflections,
+    totalCheckInDays,
+    meaningfulDays,
+    meaningfulRate,
+    currentStreak,
+  };
+}
