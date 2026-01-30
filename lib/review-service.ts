@@ -22,11 +22,11 @@ export interface ReviewStats {
 
 
 /**
- * 获取体验模式的统计数据（使用演示数据）
+ * 获取体验模式的统计数据（使用演示数据 + 用户打卡记录）
  */
-function getDemoReviewStats(period: '7d' | '30d' | '6m' | '1y'): ReviewStats {
-  // 使用所有58天演示数据
-  const allData = demoReflections.map(item => ({
+async function getDemoReviewStats(period: '7d' | '30d' | '6m' | '1y'): Promise<ReviewStats> {
+  // 1. 准备演示数据
+  const demoData = demoReflections.map(item => ({
     id: item.date,
     date: item.date,
     meaningful: item.isMeaningful,
@@ -34,6 +34,45 @@ function getDemoReviewStats(period: '7d' | '30d' | '6m' | '1y'): ReviewStats {
     wordCount: item.rawContent.length,
     createdAt: item.createdAt.getTime(),
   }));
+
+  // 2. 从 IndexedDB 读取用户新打卡的记录
+  const demoAddress = '0x0000000000000000000000000000000000000000';
+  let userReflections: typeof demoReflections = [];
+  try {
+    userReflections = await db.reflections
+      .where('walletAddress')
+      .equals(demoAddress)
+      .toArray();
+    console.log('[Review] 体验模式读取用户打卡记录:', userReflections.length, '条');
+  } catch (error) {
+    console.error('[Review] 读取用户打卡记录失败:', error);
+  }
+
+  // 3. 转换用户数据为相同格式
+  const userData = userReflections.map(item => ({
+    id: String(item.id || ''),
+    date: item.date,
+    meaningful: item.isMeaningful,
+    originalText: item.rawContent,
+    wordCount: item.rawContent.length,
+    createdAt: item.createdAt.getTime(),
+  }));
+
+  // 4. 合并数据（用户记录优先）
+  const mergedMap = new Map<string, typeof demoData[0]>();
+
+  // 先添加演示数据
+  demoData.forEach(item => {
+    mergedMap.set(item.date, item);
+  });
+
+  // 再添加用户数据（覆盖同一天的演示数据）
+  userData.forEach(item => {
+    mergedMap.set(item.date, item);
+  });
+
+  const allData = Array.from(mergedMap.values());
+  console.log('[Review] 体验模式合并后总数据:', allData.length, '条');
 
   // 根据周期筛选数据
   const filteredData = filterDataByPeriod(allData, period);
@@ -73,9 +112,9 @@ function getDemoReviewStats(period: '7d' | '30d' | '6m' | '1y'): ReviewStats {
  * 获取指定周期的统计数据
  */
 export async function getReviewStats(period: '7d' | '30d' | '6m' | '1y', walletAddress: string, isSkipMode: boolean = false): Promise<ReviewStats> {
-  // 体验模式：使用演示数据
+  // 体验模式：使用演示数据 + 用户打卡记录
   if (isSkipMode) {
-    return getDemoReviewStats(period);
+    return await getDemoReviewStats(period);
   }
 
   // 从数据库获取所有反思数据
@@ -267,17 +306,48 @@ ${stats.totalDays < 7 ? `💡 **温馨提示**：打卡天数较少，建议坚�
 }
 
 /**
- * 获取体验模式的目标对比数据（使用演示数据）
+ * 获取体验模式的目标对比数据（使用演示数据 + 用户打卡记录）
  */
-function getDemoGoalComparison() {
+async function getDemoGoalComparison() {
   const currentYear = new Date().getFullYear();
-  const yearReflections = demoReflections.filter(item => {
+
+  // 1. 准备演示数据
+  let yearReflections = demoReflections.filter(item => {
     return new Date(item.date).getFullYear() === currentYear;
   });
 
+  // 2. 从 IndexedDB 读取用户新打卡的记录
+  const demoAddress = '0x0000000000000000000000000000000000000000';
+  let userReflections: typeof demoReflections = [];
+  try {
+    userReflections = await db.reflections
+      .where('walletAddress')
+      .equals(demoAddress)
+      .toArray();
+    console.log('[Review] 体验模式读取用户打卡记录（年度复盘）:', userReflections.length, '条');
+  } catch (error) {
+    console.error('[Review] 读取用户打卡记录失败:', error);
+  }
+
+  // 3. 合并数据（用户记录优先）
+  const reflectionsMap = new Map<string, typeof demoReflections[0]>();
+
+  // 先添加演示数据
+  yearReflections.forEach(ref => {
+    reflectionsMap.set(ref.date, ref);
+  });
+
+  // 再添加用户数据（覆盖同一天的演示数据）
+  userReflections.forEach(ref => {
+    reflectionsMap.set(ref.date, ref);
+  });
+
+  const mergedReflections = Array.from(reflectionsMap.values());
+  console.log('[Review] 体验模式合并后总数据（年度复盘）:', mergedReflections.length, '条');
+
   // 按月聚合
   const monthlyData = Array.from({ length: 12 }, (_, index) => {
-    const monthReflections = yearReflections.filter(item => {
+    const monthReflections = mergedReflections.filter(item => {
       return new Date(item.date).getMonth() === index;
     });
 
@@ -293,8 +363,8 @@ function getDemoGoalComparison() {
     };
   });
 
-  const totalDays = yearReflections.length;
-  const meaningfulDays = yearReflections.filter(item => item.isMeaningful).length;
+  const totalDays = mergedReflections.length;
+  const meaningfulDays = mergedReflections.filter(item => item.isMeaningful).length;
   const meaningfulRatio = totalDays > 0 ? (meaningfulDays / totalDays) * 100 : 0;
 
   return {
@@ -312,9 +382,9 @@ function getDemoGoalComparison() {
  * 获取目标对比数据（年度复盘专用）
  */
 export async function getGoalComparisonData(walletAddress?: string, isSkipMode: boolean = false) {
-  // 体验模式：使用演示数据
+  // 体验模式：使用演示数据 + 用户打卡记录
   if (isSkipMode) {
-    return getDemoGoalComparison();
+    return await getDemoGoalComparison();
   }
 
   // 获取用户设定的目标

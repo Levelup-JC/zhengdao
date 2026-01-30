@@ -37,10 +37,33 @@ export function CheckInTimeline({ limit = 10 }: CheckInTimelineProps) {
       setLoading(true);
 
       try {
-        // 游客模式：使用演示数据
+        // 游客模式：合并演示数据和用户新打卡的记录
         if (isSkipMode) {
-          console.log('[CheckInTimeline] 游客模式，使用演示数据');
-          setReflections(demoReflections.slice(0, limit));
+          console.log('[CheckInTimeline] 游客模式，加载演示数据+用户打卡记录');
+
+          // 1. 从 IndexedDB 读取用户的新打卡记录
+          const userReflections = await ReflectionService.getRecentReflections(demoAddress || '', 100);
+          console.log('[CheckInTimeline] 用户新打卡记录:', userReflections.length);
+
+          // 2. 创建一个 Map，用日期作为 key，用于去重（用户记录优先）
+          const reflectionsMap = new Map<string, Reflection>();
+
+          // 3. 先添加演示数据
+          demoReflections.forEach(ref => {
+            reflectionsMap.set(ref.date, ref);
+          });
+
+          // 4. 再添加用户数据（覆盖同一天的演示数据）
+          userReflections.forEach(ref => {
+            reflectionsMap.set(ref.date, ref);
+          });
+
+          // 5. 转换为数组并排序（按日期倒序）
+          const mergedReflections = Array.from(reflectionsMap.values())
+            .sort((a, b) => b.date.localeCompare(a.date));
+
+          console.log('[CheckInTimeline] 合并后总记录数:', mergedReflections.length);
+          setReflections(mergedReflections.slice(0, limit));
         }
         // 真实用户：从数据库加载
         else if (address) {
@@ -60,7 +83,7 @@ export function CheckInTimeline({ limit = 10 }: CheckInTimelineProps) {
     } else {
       setLoading(false);
     }
-  }, [address, limit, isSkipMode]);
+  }, [address, limit, isSkipMode, demoAddress]);
 
   /** 删除打卡记录 */
   const handleDelete = async (id: number, date: string) => {
