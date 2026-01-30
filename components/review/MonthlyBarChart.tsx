@@ -173,59 +173,50 @@ export function MonthlyBarChart({ checkInData, period = '1y' }: MonthlyBarChartP
                 return (
                   <motion.div
                     key={month.month}
-                    className="flex-1 flex flex-col justify-end items-center gap-0.5"
+                    className="flex-1 flex flex-col justify-end items-center"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 + index * 0.05 }}
                   >
-                    {/* 柱子组 */}
-                    <div className="w-full flex flex-col justify-end items-center">
-                      {/* 有意义天数柱 - 红色实体 */}
+                    {/* 堆叠柱状图 - 从上到下：有意义(红) + 需改进(灰) + 未打卡(白) */}
+                    <div className="w-full flex flex-col justify-end items-center relative">
+                      {/* 有意义天数 - 红色柱 */}
                       {month.meaningfulDays > 0 && (
                         <motion.div
-                          className="w-full relative group border-2 border-black"
-                          style={{ height: `${meaningfulHeight}%`, backgroundColor: '#D43628' }}
+                          className="w-full border-t-2 border-x-2 border-black"
+                          style={{
+                            backgroundColor: '#D43628',
+                            height: `${meaningfulHeight}%`
+                          }}
                           initial={{ height: 0 }}
                           animate={{ height: `${meaningfulHeight}%` }}
                           transition={{ delay: 0.6 + index * 0.05, duration: 0.5 }}
-                        >
-                          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-black whitespace-nowrap bg-white/90 px-2 py-0.5 rounded border border-black"
-                               style={{ fontFamily: 'Georgia, serif' }}>
-                            {month.meaningfulDays}
-                          </div>
-                        </motion.div>
+                        />
                       )}
 
-                      {/* 需改进天数柱 - 灰色实体，更明显的灰色 */}
+                      {/* 需改进天数 - 灰色柱 */}
                       {month.notMeaningfulDays > 0 && (
                         <motion.div
-                          className="w-full relative group border-2 border-black/50"
-                          style={{ height: `${notMeaningfulHeight}%`, backgroundColor: '#9CA3AF' }}
+                          className="w-full border-t-2 border-x-2 border-black/50"
+                          style={{
+                            backgroundColor: '#9CA3AF',
+                            height: `${notMeaningfulHeight}%`
+                          }}
                           initial={{ height: 0 }}
                           animate={{ height: `${notMeaningfulHeight}%` }}
                           transition={{ delay: 0.6 + index * 0.05, duration: 0.5 }}
-                        >
-                          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-black whitespace-nowrap bg-white/90 px-2 py-0.5 rounded border border-black"
-                               style={{ fontFamily: 'Georgia, serif' }}>
-                            {month.notMeaningfulDays}
-                          </div>
-                        </motion.div>
+                        />
                       )}
 
-                      {/* 未打卡天数柱 */}
+                      {/* 未打卡天数 - 白色柱 */}
                       {month.noCheckInDays > 0 && (
                         <motion.div
-                          className="w-full relative group border-2 border-black/40 bg-white"
+                          className="w-full border-t-2 border-x-2 border-b-2 border-black/40 bg-white"
                           style={{ height: `${noCheckInHeight}%` }}
                           initial={{ height: 0 }}
                           animate={{ height: `${noCheckInHeight}%` }}
                           transition={{ delay: 0.6 + index * 0.05, duration: 0.5 }}
-                        >
-                          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-black whitespace-nowrap bg-white/90 px-2 py-0.5 rounded border border-black"
-                               style={{ fontFamily: 'Georgia, serif' }}>
-                            {month.noCheckInDays}
-                          </div>
-                        </motion.div>
+                        />
                       )}
                     </div>
 
