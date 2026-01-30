@@ -8,6 +8,8 @@
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { ReflectionService } from '@/lib/storage';
+import { useSkipMode } from '@/lib/context/SkipModeContext';
+import { demoAchievements } from '@/lib/demo-data';
 
 /** 成就数据接口 */
 export interface AchievementData {
@@ -56,11 +58,21 @@ function calculateLevel(days: number): number {
  */
 export function useUserAchievements(): UseUserAchievementsReturn {
   const { address } = useAccount();
+  const { isSkipMode } = useSkipMode();
   const [achievements, setAchievements] = useState<AchievementData[] | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadAchievements() {
+      // 体验模式：直接返回虚拟成就数据
+      if (isSkipMode) {
+        console.log('[useUserAchievements] 体验模式，使用虚拟成就数据');
+        setAchievements(demoAchievements);
+        setLoading(false);
+        return;
+      }
+
+      // 真实用户：从数据库加载
       if (!address) {
         setAchievements(null);
         setLoading(false);
@@ -103,7 +115,7 @@ export function useUserAchievements(): UseUserAchievementsReturn {
     }
 
     loadAchievements();
-  }, [address]);
+  }, [address, isSkipMode]);
 
   return { achievements, loading };
 }

@@ -302,13 +302,35 @@ export const demoLifeGoals: LifeGoal[] = [
 
 /**
  * 演示用户配置（虚拟用户信息）
+ * 58天打卡对应 Level 2（需要30天），未达到 Level 3（需要100天）
  */
 export const demoUserProfile = {
   name: '体验用户',
   avatar: '/images/avatars/default.png',
-  level: 3, // 当前等级
-  sbtLevel: 2, // 已铸造的 SBT 等级
+  level: 2, // 当前等级（58天打卡对应 Level 2）
+  sbtLevel: 2, // 已铸造的 SBT 等级（Level 1 和 Level 2 都已领取）
 };
+
+/**
+ * 演示用户的成就数据
+ * 等级达成应该是连续的：Level 1 → Level 2 → Level 3...
+ */
+export const demoAchievements = [
+  {
+    chain: 'bnb' as const,
+    currentLevel: 2, // 58天打卡对应 Level 2
+    totalCheckInDays: 58,
+    // sbtClaimed[0] 表示 Level 1，sbtClaimed[1] 表示 Level 2，以此类推
+    // 如果 sbtLevel 是 2，那么 Level 1 和 Level 2 都应该已领取
+    sbtClaimed: [true, true, false, false, false, false], // Level 1 和 Level 2 已领取
+  },
+  {
+    chain: 'solana' as const,
+    currentLevel: 2,
+    totalCheckInDays: 58,
+    sbtClaimed: [true, true, false, false, false, false],
+  },
+];
 
 /**
  * 生成演示打卡记录
