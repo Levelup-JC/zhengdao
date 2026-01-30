@@ -171,9 +171,9 @@ export default function CheckInPage() {
 
       console.log('[CheckInPage] 保存成功');
 
-      // 打卡成功后设置状态，显示 Coming Soon 提示
+      // 打卡成功后跳转到独立的成功页面
       toast.success('打卡成功！');
-      setStep('photo'); // 使用 photo 步骤来显示 Coming Soon 内容
+      router.push('/check-in/success');
 
     } catch (error) {
       console.error('[CheckInPage] 保存失败:', error);

@@ -117,6 +117,16 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-[#FFFEF2] p-6 py-12">
       <div className="max-w-4xl mx-auto space-y-8">
+        {/* 返回按钮 */}
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-2 text-ink/70 hover:text-ink transition-colors"
+          style={{ fontFamily: 'Georgia, serif' }}
+        >
+          <span className="text-xl">←</span>
+          <span>返回</span>
+        </button>
+
         {/* 头部 */}
         <div className="text-center space-y-2">
           <h1
