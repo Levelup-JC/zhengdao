@@ -7,7 +7,7 @@
 import { CheckInData, filterDataByPeriod, calculateYesNoRatio, generateTrendData, aggregateMeaningfulDays } from './chart-utils';
 import { db } from './db';
 import { generateAIResponse } from './ai-service';
-import { demoReflections, demoLifeGoal } from './demo-data';
+import { demoReflections, demoLifeGoal, demoYearlyReflections } from './demo-data';
 
 export interface ReviewStats {
   totalDays: number;
@@ -25,8 +25,11 @@ export interface ReviewStats {
  * 获取体验模式的统计数据（使用演示数据 + 用户打卡记录）
  */
 async function getDemoReviewStats(period: '7d' | '30d' | '6m' | '1y'): Promise<ReviewStats> {
-  // 1. 准备演示数据
-  const demoData = demoReflections.map(item => ({
+  // 1. 准备演示数据（年度复盘使用年度数据，其他使用最近58天数据）
+  const useYearlyData = period === '1y' || period === '6m';
+  const sourceData = useYearlyData ? demoYearlyReflections : demoReflections;
+
+  const demoData = sourceData.map(item => ({
     id: item.date,
     date: item.date,
     meaningful: item.isMeaningful,
@@ -37,7 +40,7 @@ async function getDemoReviewStats(period: '7d' | '30d' | '6m' | '1y'): Promise<R
 
   // 2. 从 IndexedDB 读取用户新打卡的记录
   const demoAddress = '0x0000000000000000000000000000000000000000';
-  let userReflections: typeof demoReflections = [];
+  let userReflections: typeof sourceData = [];
   try {
     userReflections = await db.reflections
       .where('walletAddress')
@@ -309,16 +312,12 @@ ${stats.totalDays < 7 ? `💡 **温馨提示**：打卡天数较少，建议坚�
  * 获取体验模式的目标对比数据（使用演示数据 + 用户打卡记录）
  */
 async function getDemoGoalComparison() {
-  const currentYear = new Date().getFullYear();
-
-  // 1. 准备演示数据
-  let yearReflections = demoReflections.filter(item => {
-    return new Date(item.date).getFullYear() === currentYear;
-  });
+  // 1. 使用专门生成的年度数据（均匀分布在12个月）
+  let yearReflections = demoYearlyReflections;
 
   // 2. 从 IndexedDB 读取用户新打卡的记录
   const demoAddress = '0x0000000000000000000000000000000000000000';
-  let userReflections: typeof demoReflections = [];
+  let userReflections: typeof demoYearlyReflections = [];
   try {
     userReflections = await db.reflections
       .where('walletAddress')
@@ -330,7 +329,7 @@ async function getDemoGoalComparison() {
   }
 
   // 3. 合并数据（用户记录优先）
-  const reflectionsMap = new Map<string, typeof demoReflections[0]>();
+  const reflectionsMap = new Map<string, typeof demoYearlyReflections[0]>();
 
   // 先添加演示数据
   yearReflections.forEach(ref => {

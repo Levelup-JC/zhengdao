@@ -499,6 +499,59 @@ function generateRawContent(dayIndex: number, isMeaningful: boolean): string {
 export const demoReflections: Reflection[] = generateStaticDemoReflections(58).reverse();
 
 /**
+ * 演示年度打卡记录（用于年度复盘，均匀分布在一年中）
+ * 总共180天打卡，分布在12个月，每个月10-20天
+ */
+export function generateDemoYearlyReflections(): Reflection[] {
+  const reflections: Reflection[] = [];
+  const currentYear = new Date().getFullYear();
+
+  // 每月打卡天数配置（模拟真实用户行为）
+  const monthlyDays = [15, 12, 18, 14, 16, 13, 11, 15, 17, 14, 19, 16]; // 总共180天
+
+  monthlyDays.forEach((days, monthIndex) => {
+    for (let day = 1; day <= days; day++) {
+      // 在每月内随机选择日期
+      const date = new Date(currentYear, monthIndex, Math.floor(Math.random() * 28) + 1);
+      const dateStr = date.toISOString().split('T')[0];
+
+      // 75%概率有意义
+      const isMeaningful = Math.random() > 0.25;
+
+      reflections.push({
+        date: dateStr,
+        isMeaningful,
+        rawContent: generateRawContent(reflections.length, isMeaningful),
+        structuredData: {
+          gains: isMeaningful
+            ? ['完成了重要的项目里程碑', '学习了新技术', '锻炼身体保持健康']
+            : ['日常工作', '处理邮件'],
+          losses: isMeaningful
+            ? ['时间管理需要改进', '会议时间过长']
+            : ['拖延了一些任务', '看手机时间过长'],
+          ideas: isMeaningful
+            ? ['可以尝试新的工作方法', '优化代码结构']
+            : [],
+          emotion: isMeaningful ? '积极' : '平静',
+          keywords: isMeaningful ? ['成长', '效率', '健康'] : ['日常'],
+        },
+        walletAddress: '0x0000000000000000000000000000000000000000',
+        createdAt: date,
+        updatedAt: date,
+      });
+    }
+  });
+
+  // 按日期排序
+  return reflections.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/**
+ * 演示年度打卡记录（预生成，用于年度复盘）
+ */
+export const demoYearlyReflections: Reflection[] = generateDemoYearlyReflections();
+
+/**
  * 预设的打卡历史（至少6条，用于体验模式）
  * 导出为 demoCheckInHistory 以符合任务要求
  */
