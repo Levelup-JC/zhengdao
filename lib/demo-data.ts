@@ -499,24 +499,36 @@ function generateRawContent(dayIndex: number, isMeaningful: boolean): string {
 export const demoReflections: Reflection[] = generateStaticDemoReflections(58).reverse();
 
 /**
- * 演示年度打卡记录（用于年度复盘，均匀分布在一年中）
- * 总共180天打卡，分布在12个月，每个月10-20天
+ * 演示年度打卡记录（用于年度复盘，有明显差异的数据）
+ * 每月数据有显著差异，展示不同的有意义/需改进/未打卡分布
  */
 export function generateDemoYearlyReflections(): Reflection[] {
   const reflections: Reflection[] = [];
   const currentYear = new Date().getFullYear();
 
-  // 每月打卡天数配置（模拟真实用户行为）
-  const monthlyDays = [15, 12, 18, 14, 16, 13, 11, 15, 17, 14, 19, 16]; // 总共180天
+  // 每月数据配置（模拟真实波动）：[总天数, 有意义天数]
+  const monthlyConfig = [
+    [28, 25],  // 1月: 表现优秀
+    [15, 8],   // 2月: 需改进较多
+    [30, 28],  // 3月: 表现优秀
+    [10, 5],   // 4月: 打卡较少
+    [25, 20],  // 5月: 表现良好
+    [12, 6],   // 6月: 需改进
+    [28, 15],  // 7月: 一般（有意义率低）
+    [30, 26],  // 8月: 表现优秀
+    [8, 4],    // 9月: 很少打卡
+    [20, 18],  // 10月: 表现良好
+    [25, 12],  // 11月: 一般
+    [30, 22],  // 12月: 表现优秀
+  ];
 
-  monthlyDays.forEach((days, monthIndex) => {
-    for (let day = 1; day <= days; day++) {
-      // 在每月内随机选择日期
+  monthlyConfig.forEach(([totalDays, meaningfulDays], monthIndex) => {
+    for (let day = 1; day <= totalDays; day++) {
       const date = new Date(currentYear, monthIndex, Math.floor(Math.random() * 28) + 1);
       const dateStr = date.toISOString().split('T')[0];
 
-      // 75%概率有意义
-      const isMeaningful = Math.random() > 0.25;
+      // 根据配置决定是否有意义
+      const isMeaningful = day <= meaningfulDays;
 
       reflections.push({
         date: dateStr,

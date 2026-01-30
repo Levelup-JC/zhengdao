@@ -83,10 +83,8 @@ export function MonthlyBarChart({ checkInData, period = '1y' }: MonthlyBarChartP
     return months;
   }, [checkInData]);
 
-  // 计算Y轴最大值
-  const maxValue = Math.max(
-    ...monthlyData.map(m => Math.max(m.meaningfulDays, m.notMeaningfulDays, m.noCheckInDays))
-  );
+  // 固定Y轴最大值为30天，确保数据差异可见
+  const maxValue = 30;
 
   return (
     <motion.div
