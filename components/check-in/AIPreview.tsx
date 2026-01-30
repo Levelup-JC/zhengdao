@@ -186,7 +186,7 @@ export function AIPreview({
       {/* 导航按钮组 */}
       <div className="flex justify-center gap-2 pt-4 border-t-2 border-ink/10 flex-wrap">
         <a
-          href="/"
+          href="/check-in"
           className="px-3 py-1.5 text-xs border border-ink/30 text-ink/70 hover:border-ink hover:text-ink transition-colors"
           style={{
             borderRadius: 0,
