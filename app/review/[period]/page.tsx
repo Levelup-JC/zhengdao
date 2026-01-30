@@ -69,7 +69,7 @@ export default function ReviewPeriodPage() {
           // 体验模式：直接使用降级文案，不调用 AI API
           if (isSkipMode) {
             const { generateAIReviewSummary } = await import('@/lib/review-service');
-            const summary = await generateAIReviewSummary(period, reviewStats);
+            const summary = await generateAIReviewSummary(period, reviewStats, true);
             setAiSummary(summary);
           } else {
             // 真实模式：调用 AI API
@@ -140,7 +140,7 @@ export default function ReviewPeriodPage() {
           // 体验模式：直接使用降级文案
           if (isSkipMode) {
             const { generateGoalComparisonAnalysis } = await import('@/lib/review-service');
-            const analysis = await generateGoalComparisonAnalysis(comparisonData);
+            const analysis = await generateGoalComparisonAnalysis(comparisonData, true);
             setGoalAnalysis(analysis);
           } else {
             // 真实模式：调用 AI API
@@ -173,7 +173,7 @@ export default function ReviewPeriodPage() {
           // 体验模式：直接使用降级文案
           if (isSkipMode) {
             const { generateProblemAnalysis } = await import('@/lib/review-service');
-            const analysis = await generateProblemAnalysis(problemMonths);
+            const analysis = await generateProblemAnalysis(problemMonths, true);
             setProblemAnalysis(analysis);
           } else {
             // 真实模式：调用 AI API

@@ -174,10 +174,14 @@ export async function getReviewStats(period: '7d' | '30d' | '6m' | '1y', walletA
 
 /**
  * 生成 AI 周期总结
+ * @param period 周期
+ * @param stats 统计数据
+ * @param isSkipMode 是否为体验模式
  */
 export async function generateAIReviewSummary(
   period: '7d' | '30d' | '6m' | '1y',
-  stats: ReviewStats
+  stats: ReviewStats,
+  isSkipMode: boolean = false
 ): Promise<string> {
   const periodLabels: Record<string, string> = {
     '7d': '7天',
@@ -220,12 +224,17 @@ ${stats.meaningfulSummaries.length > 0 ? summariesText : `${stats.totalDays > 0 
 
   let aiResult: string | null = null;
 
-  // 尝试调用 AI，失败时自动使用降级文案
-  try {
-    aiResult = await generateAIResponse(prompt, 500);
-  } catch (error) {
-    console.error('[generateAIReviewSummary] AI调用失败，使用降级文案:', error);
-    // AI调用失败，aiResult 保持为 null，将使用降级文案
+  // 体验模式：直接使用降级文案，不调用 AI API
+  if (!isSkipMode) {
+    // 真实模式：尝试调用 AI
+    try {
+      aiResult = await generateAIResponse(prompt, 500);
+    } catch (error) {
+      console.error('[generateAIReviewSummary] AI调用失败，使用降级文案:', error);
+      // AI调用失败，aiResult 保持为 null，将使用降级文案
+    }
+  } else {
+    console.log('[generateAIReviewSummary] 体验模式，跳过AI调用，使用降级文案');
   }
 
   if (aiResult) {
@@ -446,8 +455,13 @@ export async function getGoalComparisonData(walletAddress?: string, isSkipMode: 
 
 /**
  * 生成年度目标对比分析
+ * @param comparisonData 对比数据
+ * @param isSkipMode 是否为体验模式
  */
-export async function generateGoalComparisonAnalysis(comparisonData: Awaited<ReturnType<typeof getGoalComparisonData>>): Promise<string> {
+export async function generateGoalComparisonAnalysis(
+  comparisonData: Awaited<ReturnType<typeof getGoalComparisonData>>,
+  isSkipMode: boolean = false
+): Promise<string> {
   const { goals, yearlyStats, monthlyData } = comparisonData;
 
   const goalsText = goals.map(goal => {
@@ -492,7 +506,14 @@ ${monthlyText || '暂无数据'}
 2. 字数控制在300字以内
 3. 给出可操作的改进建议`;
 
-  const aiResult = await generateAIResponse(prompt, 600);
+  let aiResult: string | null = null;
+
+  // 体验模式：直接使用降级文案，不调用 AI API
+  if (!isSkipMode) {
+    aiResult = await generateAIResponse(prompt, 600);
+  } else {
+    console.log('[generateGoalComparisonAnalysis] 体验模式，跳过AI调用，使用降级文案');
+  }
 
   if (aiResult) {
     return aiResult;
@@ -517,9 +538,12 @@ export function analyzeProblemMonths(monthlyData: Array<{ month: string; total: 
 
 /**
  * 生成问题分析报告
+ * @param problemMonths 问题月份数据
+ * @param isSkipMode 是否为体验模式
  */
 export async function generateProblemAnalysis(
-  problemMonths: Array<{ month: string; total: number; meaningful: number; ratio: number }>
+  problemMonths: Array<{ month: string; total: number; meaningful: number; ratio: number }>,
+  isSkipMode: boolean = false
 ): Promise<string> {
   if (problemMonths.length === 0) {
     return '目前数据不足，无法进行问题分析。继续积累打卡记录，系统将为你提供更有价值的分析。';
@@ -544,7 +568,14 @@ ${problemText}
 2. 字数控制在200字以内
 3. 给出实用的解决方案`;
 
-  const aiResult = await generateAIResponse(prompt, 500);
+  let aiResult: string | null = null;
+
+  // 体验模式：直接使用降级文案，不调用 AI API
+  if (!isSkipMode) {
+    aiResult = await generateAIResponse(prompt, 500);
+  } else {
+    console.log('[generateProblemAnalysis] 体验模式，跳过AI调用，使用降级文案');
+  }
 
   if (aiResult) {
     return aiResult;
