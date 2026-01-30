@@ -25,6 +25,7 @@ import {
   analyzeProblemMonths,
 } from '@/lib/review-service';
 import { aggregateMeaningfulDays } from '@/lib/chart-utils';
+import { CompetitionInfo } from '@/components/CompetitionInfo';
 
 type PeriodType = '7d' | '30d' | '6m' | '1y';
 
@@ -395,6 +396,9 @@ export default function ReviewPeriodPage() {
             坚持打卡，让每一天都更有意义。复盘不是为了自责，而是为了成长。
           </p>
         </motion.div>
+
+        {/* 参赛信息模块 */}
+        <CompetitionInfo />
       </div>
     </div>
   );
