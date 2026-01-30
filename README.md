@@ -2,11 +2,11 @@
 
 基于BNB Chain和Solana的去中心化成就系统,通过吾日三省吾身获得Soulbound Token(SBT)。
 
-> **📊 最新状态**: 查看 [最新项目状态报告](./LATEST-PROJECT-STATUS-REPORT.md) 了解项目整体进度
+> **📊 最新状态**: 查看 [最新项目状态报告](./docs/guides/LATEST-PROJECT-STATUS-REPORT.md) 了解项目整体进度
 >
-> **📋 任务协调**: 查看 [CTO任务管理中心](./CTO-TASK-MANAGER.md) 了解AI团队任务分配
+> **📋 任务协调**: 查看 [CTO任务管理中心](./docs/planning/CTO-TASK-MANAGER.md) 了解AI团队任务分配
 >
-> **🚀 快速启动**: 查看 [AI任务分配清单](./AI-TASK-ALLOCATION.md) 了解各AI的具体任务
+> **🚀 快速启动**: 查看 [AI任务分配清单](./docs/planning/AI-TASK-ALLOCATION.md) 了解各AI的具体任务
 >
 > **📖 中文手册**: 查看 [用户使用手册](./docs/用户使用手册.md) 获取完整使用指南
 
