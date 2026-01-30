@@ -144,8 +144,8 @@ export function SBTShowcase({ onClaim }: SBTShowcaseProps) {
           const isUnlocked = totalDays >= levelInfo.requiredDays;
           const isClaimable = claimableLevels.includes(levelInfo.level);
 
-          // 检查当前链是否已领取该等级
-          const currentChainAchievement = achievements.find((a) => a.chain === chain);
+          // 检查当前链是否已领取该等级（体验模式下没有成就数据）
+          const currentChainAchievement = achievements?.find((a) => a.chain === chain);
           const isClaimed = currentChainAchievement?.sbtClaimed[levelInfo.level - 1];
 
           return (
