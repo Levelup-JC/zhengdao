@@ -19,6 +19,7 @@ import { PhotoUpload } from '@/components/check-in/PhotoUpload';
 import { CheckInService } from '@/lib/check-in-service';
 import type { StructuredReflectionData } from '@/lib/db';
 import { useSkipMode } from '@/lib/context/SkipModeContext';
+import { CompetitionInfo } from '@/components/CompetitionInfo';
 
 /** 流程步骤类型 */
 type CheckInStep = 'question' | 'input' | 'processing' | 'preview' | 'photo';
@@ -426,6 +427,9 @@ export default function CheckInPage() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* 参赛信息模块 */}
+        <CompetitionInfo />
       </div>
     </div>
   );
