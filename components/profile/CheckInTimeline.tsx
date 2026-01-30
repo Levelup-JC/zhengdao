@@ -26,7 +26,7 @@ interface CheckInTimelineProps {
 export function CheckInTimeline({ limit = 10 }: CheckInTimelineProps) {
   const { address } = useAccount();
   const router = useRouter();
-  const { isSkipMode } = useSkipMode();
+  const { isSkipMode, demoAddress } = useSkipMode();
   const [reflections, setReflections] = useState<Reflection[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null);
