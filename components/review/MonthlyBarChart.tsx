@@ -126,15 +126,15 @@ export function MonthlyBarChart({ checkInData, period = '1y' }: MonthlyBarChartP
         transition={{ delay: 0.4 }}
       >
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4" style={{ backgroundColor: '#D43628' }}></div>
+          <div className="w-4 h-4 border-2 border-black" style={{ backgroundColor: '#D43628' }}></div>
           <span className="text-black/70">有意义</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4" style={{ backgroundColor: '#E5E7EB' }}></div>
-          <span className="text-black/70">无意义</span>
+          <div className="w-4 h-4 border-2 border-black/30" style={{ backgroundColor: '#9CA3AF' }}></div>
+          <span className="text-black/70">需改进</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 border border-black/20 bg-white"></div>
+          <div className="w-4 h-4 border-2 border-black/20 bg-white"></div>
           <span className="text-black/70">未打卡</span>
         </div>
       </motion.div>
@@ -180,32 +180,32 @@ export function MonthlyBarChart({ checkInData, period = '1y' }: MonthlyBarChartP
                   >
                     {/* 柱子组 */}
                     <div className="w-full flex flex-col justify-end items-center">
-                      {/* 有意义天数柱 */}
+                      {/* 有意义天数柱 - 红色实体 */}
                       {month.meaningfulDays > 0 && (
                         <motion.div
-                          className="w-full relative group"
+                          className="w-full relative group border-2 border-black"
                           style={{ height: `${meaningfulHeight}%`, backgroundColor: '#D43628' }}
                           initial={{ height: 0 }}
                           animate={{ height: `${meaningfulHeight}%` }}
                           transition={{ delay: 0.6 + index * 0.05, duration: 0.5 }}
                         >
-                          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-black whitespace-nowrap bg-white/80 px-1 rounded"
+                          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-black whitespace-nowrap bg-white/90 px-2 py-0.5 rounded border border-black"
                                style={{ fontFamily: 'Georgia, serif' }}>
                             {month.meaningfulDays}
                           </div>
                         </motion.div>
                       )}
 
-                      {/* 无意义天数柱 */}
+                      {/* 需改进天数柱 - 灰色实体，更明显的灰色 */}
                       {month.notMeaningfulDays > 0 && (
                         <motion.div
-                          className="w-full relative group"
-                          style={{ height: `${notMeaningfulHeight}%`, backgroundColor: '#E5E7EB' }}
+                          className="w-full relative group border-2 border-black/50"
+                          style={{ height: `${notMeaningfulHeight}%`, backgroundColor: '#9CA3AF' }}
                           initial={{ height: 0 }}
                           animate={{ height: `${notMeaningfulHeight}%` }}
                           transition={{ delay: 0.6 + index * 0.05, duration: 0.5 }}
                         >
-                          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-black whitespace-nowrap bg-white/80 px-1 rounded"
+                          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-black whitespace-nowrap bg-white/90 px-2 py-0.5 rounded border border-black"
                                style={{ fontFamily: 'Georgia, serif' }}>
                             {month.notMeaningfulDays}
                           </div>
@@ -215,13 +215,13 @@ export function MonthlyBarChart({ checkInData, period = '1y' }: MonthlyBarChartP
                       {/* 未打卡天数柱 */}
                       {month.noCheckInDays > 0 && (
                         <motion.div
-                          className="w-full relative group border border-black/20 bg-white"
+                          className="w-full relative group border-2 border-black/40 bg-white"
                           style={{ height: `${noCheckInHeight}%` }}
                           initial={{ height: 0 }}
                           animate={{ height: `${noCheckInHeight}%` }}
                           transition={{ delay: 0.6 + index * 0.05, duration: 0.5 }}
                         >
-                          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-black whitespace-nowrap bg-white/80 px-1 rounded"
+                          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-black whitespace-nowrap bg-white/90 px-2 py-0.5 rounded border border-black"
                                style={{ fontFamily: 'Georgia, serif' }}>
                             {month.noCheckInDays}
                           </div>
