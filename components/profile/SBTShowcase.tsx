@@ -201,17 +201,12 @@ export function SBTShowcase({ onClaim }: SBTShowcaseProps) {
                 >
                   {levelInfo.title}
                 </div>
-                <div className="text-xs text-ink/40 mb-2">
+                <div className="text-xs text-ink/40">
                   需要 {levelInfo.requiredDays} 天
                 </div>
                 {totalDays < levelInfo.requiredDays && (
-                  <div className="text-xs text-ink/30">
+                  <div className="text-xs text-ink/30 mt-1">
                     还需 {levelInfo.requiredDays - totalDays} 天
-                  </div>
-                )}
-                {totalDays >= levelInfo.requiredDays && totalDays < (ACHIEVEMENT_LEVELS[levelInfo.level]?.requiredDays || Infinity) && (
-                  <div className="text-xs text-seal">
-                    已达成
                   </div>
                 )}
               </div>
