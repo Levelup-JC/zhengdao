@@ -37,3 +37,7 @@
 - 本机 Chrome 走体验模式：选择「是」、填写正文、刷新后 textarea 仍是原文；提交后页面出现红色「AI 整理失败」和缺少 `DEEPSEEK_API_KEY` 的说明；跳过 AI 保存后成功页能看到原文；再刷新成功页和 `/check-in` 都能看到同一段原文。
 
 未部署，未合并。PR 链接写在验收文档。
+
+## 2026-11-08 PR
+
+已推送 `fix/daily-three-questions-mvp` 并打开 https://github.com/Levelup-JC/zhengdao/pull/1 。未合并，未部署。验收记录见 `docs/每日三问-mvp-验收.md`。
