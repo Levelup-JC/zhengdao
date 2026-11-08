@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateAIResponse } from '@/lib/ai-service';
+import { callAIService } from '@/lib/ai-service';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     console.log('[API] 测试 AI 服务...');
     const startTime = Date.now();
 
-    const result = await generateAIResponse(prompt, 100);
+    const result = await callAIService(prompt, 100);
 
     const endTime = Date.now();
     const duration = endTime - startTime;
@@ -24,7 +24,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       result,
-      provider: 'glm',
+      provider: result.provider,
+      model: result.model,
       duration,
     });
   } catch (error: any) {

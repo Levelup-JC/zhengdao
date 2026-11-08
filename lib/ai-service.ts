@@ -31,6 +31,7 @@ interface AIServiceConfig {
 interface AIResponse {
   content: string;
   model: string;
+  provider: AIProvider;
   usage?: {
     promptTokens: number;
     completionTokens: number;
@@ -50,6 +51,78 @@ export class AIServiceError extends Error {
     super(message);
     this.name = 'AIServiceError';
   }
+}
+
+interface ProviderAttempt {
+  provider: AIProvider;
+  error: AIServiceError;
+}
+
+function extractErrorMessage(raw: string): string {
+  try {
+    const parsed = JSON.parse(raw);
+
+    if (typeof parsed === 'string') {
+      return parsed;
+    }
+
+    if (typeof parsed?.error === 'string') {
+      return parsed.error;
+    }
+
+    if (typeof parsed?.error?.message === 'string') {
+      return parsed.error.message;
+    }
+
+    if (typeof parsed?.message === 'string') {
+      return parsed.message;
+    }
+  } catch {
+    // Keep raw body when it is not valid JSON.
+  }
+
+  return raw;
+}
+
+function isAuthTokenError(message: string, statusCode?: number): boolean {
+  const normalizedMessage = message.toLowerCase();
+
+  return (
+    statusCode === 401 ||
+    statusCode === 403 ||
+    normalizedMessage.includes('invalidated oauth token') ||
+    normalizedMessage.includes('oauth token') ||
+    normalizedMessage.includes('invalid token') ||
+    normalizedMessage.includes('token expired') ||
+    normalizedMessage.includes('invalid_grant') ||
+    normalizedMessage.includes('authentication failed') ||
+    normalizedMessage.includes('unauthorized')
+  );
+}
+
+function formatProviderError(provider: AIProvider, raw: string, statusCode?: number): string {
+  const details = extractErrorMessage(raw).trim() || '未知错误';
+
+  if (isAuthTokenError(details, statusCode)) {
+    return `${provider.toUpperCase()} 认证失败：API Token 无效、已过期或已被服务端撤销，请检查对应环境变量。原始信息: ${details}`;
+  }
+
+  return `${provider.toUpperCase()} API 请求失败: ${details}`;
+}
+
+function buildFinalErrorMessage(attempts: ProviderAttempt[]): string {
+  const authFailure = attempts.find((attempt) =>
+    isAuthTokenError(attempt.error.message, attempt.error.statusCode)
+  );
+
+  if (authFailure) {
+    return `${authFailure.provider.toUpperCase()} 的 API Token 无效、已过期或已被撤销，导致请求失败。请更新对应环境变量后重试。`;
+  }
+
+  const attemptedProviders = attempts.map((attempt) => attempt.provider.toUpperCase()).join(' -> ');
+  const lastAttempt = attempts[attempts.length - 1];
+
+  return `AI 服务调用失败。已尝试: ${attemptedProviders}。最后错误: ${lastAttempt.error.message}`;
 }
 
 /**
@@ -99,7 +172,7 @@ async function callGLMAPI(prompt: string, maxTokens: number = 500): Promise<AIRe
 
       res.on('end', () => {
         if (res.statusCode !== 200) {
-          reject(new AIServiceError(`GLM API 请求失败: ${data}`, res.statusCode, 'glm'));
+          reject(new AIServiceError(formatProviderError('glm', data, res.statusCode), res.statusCode, 'glm'));
           return;
         }
 
@@ -108,6 +181,7 @@ async function callGLMAPI(prompt: string, maxTokens: number = 500): Promise<AIRe
           resolve({
             content: result.choices[0].message.content,
             model: result.model,
+            provider: 'glm',
             usage: result.usage ? {
               promptTokens: result.usage.prompt_tokens,
               completionTokens: result.usage.completion_tokens,
@@ -182,7 +256,7 @@ async function callMiniMaxAPI(prompt: string, maxTokens: number = 500): Promise<
 
       res.on('end', () => {
         if (res.statusCode !== 200) {
-          reject(new AIServiceError(`MiniMax API 请求失败: ${data}`, res.statusCode, 'minimax'));
+          reject(new AIServiceError(formatProviderError('minimax', data, res.statusCode), res.statusCode, 'minimax'));
           return;
         }
 
@@ -191,6 +265,7 @@ async function callMiniMaxAPI(prompt: string, maxTokens: number = 500): Promise<
           resolve({
             content: result.choices[0].message.content,
             model: result.model || 'abab6.5-chat',
+            provider: 'minimax',
             usage: result.usage ? {
               promptTokens: result.usage.prompt_tokens || result.usage.total_tokens,
               completionTokens: result.usage.completion_tokens || 0,
@@ -276,7 +351,7 @@ async function callDeepSeekAPI(prompt: string, maxTokens: number = 500): Promise
 
       res.on('end', () => {
         if (res.statusCode !== 200) {
-          reject(new AIServiceError(`DeepSeek API 请求失败: ${data}`, res.statusCode, 'deepseek'));
+          reject(new AIServiceError(formatProviderError('deepseek', data, res.statusCode), res.statusCode, 'deepseek'));
           return;
         }
 
@@ -285,6 +360,7 @@ async function callDeepSeekAPI(prompt: string, maxTokens: number = 500): Promise
           resolve({
             content: result.choices[0].message.content,
             model: result.model,
+            provider: 'deepseek',
             usage: result.usage ? {
               promptTokens: result.usage.prompt_tokens,
               completionTokens: result.usage.completion_tokens,
@@ -318,6 +394,8 @@ async function callDeepSeekAPI(prompt: string, maxTokens: number = 500): Promise
  * 当 GLM 达到限制时，自动切换到 MiniMax
  */
 export async function callAIService(prompt: string, maxTokens: number = 500): Promise<AIResponse> {
+  const attempts: ProviderAttempt[] = [];
+
   // 优先使用 GLM
   if (process.env.GLM_API_KEY) {
     try {
@@ -327,6 +405,9 @@ export async function callAIService(prompt: string, maxTokens: number = 500): Pr
       return result;
     } catch (error) {
       console.error('[AI Service] GLM-4 API 调用失败:', error);
+      if (error instanceof AIServiceError) {
+        attempts.push({ provider: 'glm', error });
+      }
       // 如果 GLM 失败（可能达到限制），尝试 MiniMax
     }
   }
@@ -340,6 +421,9 @@ export async function callAIService(prompt: string, maxTokens: number = 500): Pr
       return result;
     } catch (error) {
       console.error('[AI Service] MiniMax API 调用失败:', error);
+      if (error instanceof AIServiceError) {
+        attempts.push({ provider: 'minimax', error });
+      }
       // 如果 MiniMax 也失败，尝试 DeepSeek
     }
   }
@@ -353,6 +437,9 @@ export async function callAIService(prompt: string, maxTokens: number = 500): Pr
       return result;
     } catch (error) {
       console.error('[AI Service] DeepSeek API 调用失败:', error);
+      if (error instanceof AIServiceError) {
+        attempts.push({ provider: 'deepseek', error });
+      }
       // DeepSeek 失败，尝试 Gemini
     }
   }
@@ -366,7 +453,22 @@ export async function callAIService(prompt: string, maxTokens: number = 500): Pr
       return result;
     } catch (error) {
       console.error('[AI Service] Gemini API 调用失败:', error);
+      if (error instanceof Error) {
+        attempts.push({
+          provider: 'gemini',
+          error: new AIServiceError(error.message, undefined, 'gemini'),
+        });
+      }
     }
+  }
+
+  if (attempts.length > 0) {
+    const lastAttempt = attempts[attempts.length - 1];
+    throw new AIServiceError(
+      buildFinalErrorMessage(attempts),
+      lastAttempt.error.statusCode,
+      lastAttempt.provider
+    );
   }
 
   throw new AIServiceError(

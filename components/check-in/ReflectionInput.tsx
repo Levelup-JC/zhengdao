@@ -16,8 +16,16 @@ interface ReflectionInputProps {
   initialValue?: string;
   /** AI整理的数据（如果有） */
   structuredData?: StructuredReflectionData | null;
+  /** AI 失败时的可读原因 */
+  aiError?: string | null;
   /** 提交回调 */
   onSubmit: (content: string) => void;
+  /** AI 失败后仍保存原文 */
+  onSaveWithoutAI?: (content: string) => void;
+  /** 输入时同步草稿，刷新前不丢字 */
+  onDraftChange?: (content: string) => void;
+  /** 保存中 */
+  isSaving?: boolean;
   /** 取消回调 */
   onCancel?: () => void;
 }
@@ -26,7 +34,11 @@ export function ReflectionInput({
   isMeaningful,
   initialValue = '',
   structuredData = null,
+  aiError = null,
   onSubmit,
+  onSaveWithoutAI,
+  isSaving = false,
+  onDraftChange,
   onCancel,
 }: ReflectionInputProps) {
   const [content, setContent] = useState(initialValue);
@@ -80,7 +92,10 @@ export function ReflectionInput({
         </label>
         <textarea
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={(e) => {
+            setContent(e.target.value);
+            onDraftChange?.(e.target.value);
+          }}
           placeholder="记录今天的收获、遗憾、想法..."
           className="w-full h-64 p-4 border-2 border-ink/30 bg-paper text-ink leading-relaxed resize-none focus:border-seal focus:outline-none"
           style={{
@@ -97,6 +112,17 @@ export function ReflectionInput({
           </span>
         </div>
       </div>
+
+      {aiError && (
+        <div className="border-2 border-red-700 bg-red-50 p-4" role="alert">
+          <p className="text-sm font-bold text-red-800" style={{ fontFamily: 'Georgia, serif' }}>
+            AI 整理失败
+          </p>
+          <p className="mt-2 text-sm text-red-900 whitespace-pre-wrap" style={{ fontFamily: 'Georgia, serif' }}>
+            {aiError}
+          </p>
+        </div>
+      )}
 
       {/* 引导提示 */}
       {content.length === 0 && !structuredData && (
@@ -213,7 +239,7 @@ export function ReflectionInput({
         )}
         <button
           onClick={handleSubmit}
-          disabled={content.trim().length < 10}
+          disabled={content.trim().length < 10 || isSaving}
           className="flex-1 py-3 bg-seal text-paper font-bold disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
             borderRadius: 0,
@@ -223,6 +249,19 @@ export function ReflectionInput({
           {content.trim().length < 10 ? `还需${10 - content.trim().length}字` : '继续下一步'}
         </button>
       </div>
+      {aiError && onSaveWithoutAI && (
+        <button
+          onClick={() => onSaveWithoutAI(content.trim())}
+          disabled={content.trim().length < 10 || isSaving}
+          className="w-full py-3 border-2 border-ink text-ink font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{
+            borderRadius: 0,
+            fontFamily: 'Georgia, serif',
+          }}
+        >
+          {isSaving ? '保存中...' : '跳过 AI，保存原文'}
+        </button>
+      )}
     </motion.div>
   );
 }

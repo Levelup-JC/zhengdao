@@ -13,6 +13,7 @@ import https from 'https';
 export interface GeminiResponse {
   content: string;
   model: string;
+  provider: 'gemini';
   usage?: {
     promptTokens: number;
     completionTokens: number;
@@ -128,6 +129,7 @@ export async function callGeminiAPI(
           resolve({
             content,
             model,
+            provider: 'gemini',
             usage,
           });
         } catch (parseError) {
