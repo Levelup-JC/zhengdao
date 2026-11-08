@@ -103,6 +103,20 @@ export class CheckInService {
   }
 
   /**
+   * 获取今天最新的一条打卡，刷新后用来恢复已保存内容。
+   */
+  static async getLatestTodayCheckIn(walletAddress: string): Promise<Reflection | undefined> {
+    try {
+      const today = getTodayDateUTC8();
+      const recent = await ReflectionService.getRecentReflections(walletAddress, 30);
+      return recent.find((item) => item.date === today);
+    } catch (error) {
+      console.error('[CheckInService] 获取今日最新打卡失败:', error);
+      throw error;
+    }
+  }
+
+  /**
    * 检查今日是否已打卡（UTC+8）
    * @param walletAddress 钱包地址
    */

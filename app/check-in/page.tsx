@@ -5,7 +5,7 @@
  * 优化后的打卡流程
  */
 
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAccount } from 'wagmi';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,19 +15,34 @@ import { DailyQuestion } from '@/components/check-in/DailyQuestion';
 import { ReflectionInput } from '@/components/check-in/ReflectionInput';
 import { ProcessingStep } from '@/components/check-in/ProcessingStep';
 import { AIPreview } from '@/components/check-in/AIPreview';
-import { PhotoUpload } from '@/components/check-in/PhotoUpload';
+import { SavedReflection } from '@/components/check-in/SavedReflection';
 import { CheckInService } from '@/lib/check-in-service';
-import type { StructuredReflectionData } from '@/lib/db';
+import {
+  clearCheckInDraft,
+  loadCheckInDraft,
+  saveCheckInDraft,
+  type CheckInDraftStep,
+} from '@/lib/check-in-draft';
+import type { Reflection, StructuredReflectionData } from '@/lib/db';
 import { useSkipMode } from '@/lib/context/SkipModeContext';
+import { getTodayDateUTC8 } from '@/lib/utils/date';
 import { CompetitionInfo } from '@/components/CompetitionInfo';
 
 /** 流程步骤类型 */
 type CheckInStep = 'question' | 'input' | 'processing' | 'preview' | 'photo';
 
+const EMPTY_SUMMARY: StructuredReflectionData = {
+  gains: [],
+  losses: [],
+  ideas: [],
+  emotion: '',
+  keywords: [],
+};
+
 export default function CheckInPage() {
   const router = useRouter();
   const { address, isConnected } = useAccount();
-  const { isSkipMode, demoAddress } = useSkipMode();
+  const { isSkipMode, isSkipModeReady, demoAddress } = useSkipMode();
 
   // 当前步骤
   const [step, setStep] = useState<CheckInStep>('question');
@@ -36,38 +51,102 @@ export default function CheckInPage() {
   const [isMeaningful, setIsMeaningful] = useState<boolean | null>(null);
   const [content, setContent] = useState('');
   const [structuredData, setStructuredData] = useState<StructuredReflectionData | null>(null);
-  const [photos, setPhotos] = useState<string[]>([]);
+  const [photos] = useState<string[]>([]);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [savedReflection, setSavedReflection] = useState<Reflection | null>(null);
 
   // 状态
-  const [isProcessing, setIsProcessing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasCheckedIn, setHasCheckedIn] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(true);
+  const restoredRef = useRef(false);
 
-  /** 检查今日是否已打卡 */
+  const effectiveAddress = isSkipMode ? demoAddress : address;
+
+  /** 恢复今日已保存记录，或恢复未提交草稿 */
   useEffect(() => {
-    const checkTodayStatus = async () => {
-      // 体验模式：不检查打卡状态，允许无限打卡
-      if (isSkipMode) {
-        setHasCheckedIn(false);
-        return;
-      }
+    if (!isSkipModeReady) return;
 
-      const effectiveAddress = address || demoAddress;
-      if (!effectiveAddress) return;
+    let cancelled = false;
+
+    if (!isSkipMode && !isConnected) {
+      restoredRef.current = true;
+      setIsRestoring(false);
+      return;
+    }
+
+    if (!effectiveAddress) return;
+
+    restoredRef.current = false;
+    setIsRestoring(true);
+
+    const restore = async () => {
+      const today = getTodayDateUTC8();
 
       try {
-        const todayCheckIn = await CheckInService.getTodayCheckIn(effectiveAddress);
-        if (todayCheckIn) {
+        const todayCheckIn = await CheckInService.getLatestTodayCheckIn(effectiveAddress);
+        if (cancelled) return;
+
+        if (todayCheckIn && !isSkipMode) {
+          setSavedReflection(todayCheckIn);
           setHasCheckedIn(true);
-          toast.success('今日已打卡');
+          clearCheckInDraft(window.localStorage, effectiveAddress, today);
+          return;
+        }
+
+        if (todayCheckIn) {
+          setSavedReflection(todayCheckIn);
+        }
+
+        const draft = loadCheckInDraft(window.localStorage, effectiveAddress, today);
+        if (cancelled) return;
+
+        if (draft) {
+          setIsMeaningful(draft.isMeaningful);
+          setContent(draft.content);
+          setStructuredData(draft.structuredData);
+          setAiError(draft.aiError);
+          setStep(draft.step);
+          toast.success('已恢复上次填写的内容');
         }
       } catch (error) {
-        console.error('[CheckInPage] 检查打卡状态失败:', error);
+        console.error('[CheckInPage] 恢复打卡内容失败:', error);
+        if (!cancelled) {
+          toast.error(error instanceof Error ? error.message : '恢复已填内容失败');
+        }
+      } finally {
+        if (!cancelled) {
+          restoredRef.current = true;
+          setIsRestoring(false);
+        }
       }
     };
 
-    checkTodayStatus();
-  }, [address, demoAddress, isSkipMode]);
+    restore();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveAddress, isConnected, isSkipMode, isSkipModeReady]);
+
+  /** 填写过程中持续保存草稿，刷新后还能回来 */
+  useEffect(() => {
+    if (!restoredRef.current || isRestoring || !effectiveAddress || hasCheckedIn) return;
+
+    const draftStep: CheckInDraftStep =
+      step === 'preview' ? 'preview' : step === 'question' ? 'question' : 'input';
+
+    saveCheckInDraft(window.localStorage, {
+      date: getTodayDateUTC8(),
+      walletAddress: effectiveAddress,
+      step: draftStep,
+      isMeaningful,
+      content,
+      structuredData,
+      aiError,
+      updatedAt: Date.now(),
+    });
+  }, [aiError, content, effectiveAddress, hasCheckedIn, isMeaningful, isRestoring, step, structuredData]);
 
   /** 处理问题回答 */
   const handleQuestionAnswer = (answer: boolean) => {
@@ -78,13 +157,12 @@ export default function CheckInPage() {
   /** 处理内容提交 */
   const handleContentSubmit = async (inputContent: string) => {
     setContent(inputContent);
+    setAiError(null);
     setStep('processing');
-    setIsProcessing(true);
 
     try {
       console.log('[CheckInPage] 开始AI处理，内容长度:', inputContent.length);
 
-      // 调用AI API处理
       const response = await fetch('/api/reflect/process', {
         method: 'POST',
         headers: {
@@ -95,13 +173,17 @@ export default function CheckInPage() {
 
       console.log('[CheckInPage] API响应状态:', response.status);
 
-      const result = await response.json();
+      let result: { success?: boolean; data?: StructuredReflectionData; error?: string } | null = null;
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error(`AI 服务返回了无法解析的结果（HTTP ${response.status}）。`);
+      }
 
       console.log('[CheckInPage] API返回结果:', result);
 
-      if (!result.success) {
-        console.error('[CheckInPage] API返回失败:', result.error);
-        throw new Error(result.error || 'AI处理失败');
+      if (!response.ok || !result?.success || !result.data) {
+        throw new Error(result?.error || `AI 处理失败（HTTP ${response.status}）。`);
       }
 
       console.log('[CheckInPage] AI处理成功，数据:', result.data);
@@ -109,29 +191,16 @@ export default function CheckInPage() {
       setStep('preview');
       toast.success('AI整理完成！');
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'AI 处理失败，请重试';
       console.error('[CheckInPage] AI处理失败:', error);
-
-      // 使用内置的Mock数据作为fallback
-      console.log('[CheckInPage] 使用Mock数据作为fallback');
-      const mockData = {
-        gains: ['完成了重要任务', '学习了新知识', '保持了积极心态'],
-        losses: ['花费了太多时间', '需要提高效率'],
-        ideas: ['明天继续努力', '改进时间管理'],
-        emotion: ['积极', '平静', '焦虑', '疲惫'][Math.floor(Math.random() * 4)],
-        keywords: ['成长', '进步', '复盘'],
-      };
-
-      setStructuredData(mockData);
-      setStep('preview');
-      toast.success('使用演示数据完成整理');
-    } finally {
-      setIsProcessing(false);
+      setStructuredData(null);
+      setAiError(message);
+      setStep('input');
+      toast.error(message);
     }
   };
 
-  /** 处理预览确认 */
-  const handlePreviewConfirm = async () => {
-    const effectiveAddress = address || demoAddress;
+  const persistCheckIn = async (originalText: string, summary: StructuredReflectionData) => {
     if (!effectiveAddress) {
       toast.error('请先连接钱包或使用体验模式');
       return;
@@ -143,38 +212,30 @@ export default function CheckInPage() {
       return;
     }
 
+    setContent(originalText);
     setIsSaving(true);
 
     try {
       console.log('[CheckInPage] 开始保存打卡数据:', {
         address: effectiveAddress,
         isMeaningful,
-        contentLength: content.length,
-        hasStructuredData: !!structuredData,
+        contentLength: originalText.length,
+        hasStructuredData: summary.gains.length > 0 || summary.losses.length > 0,
         photosCount: photos.length,
         isSkipMode,
       });
 
-      // 保存打卡数据（体验模式下跳过每日打卡检查）
       await CheckInService.saveCheckIn(effectiveAddress, {
         meaningful: isMeaningful,
-        originalText: content,
-        aiSummary: structuredData || {
-          gains: [],
-          losses: [],
-          ideas: [],
-          emotion: '',
-          keywords: [],
-        },
+        originalText,
+        aiSummary: summary,
         photos,
       }, isSkipMode ? { skipDailyCheck: true } : undefined);
 
+      clearCheckInDraft(window.localStorage, effectiveAddress, getTodayDateUTC8());
       console.log('[CheckInPage] 保存成功');
-
-      // 打卡成功后跳转到独立的成功页面
-      toast.success('打卡成功！');
+      toast.success(aiError ? '已保存原文。这次没有 AI 整理结果。' : '打卡成功！');
       router.push('/check-in/success');
-
     } catch (error) {
       console.error('[CheckInPage] 保存失败:', error);
       const errorMessage = error instanceof Error ? error.message : '保存失败，请重试';
@@ -184,19 +245,30 @@ export default function CheckInPage() {
     }
   };
 
+  /** 处理预览确认 */
+  const handlePreviewConfirm = async () => {
+    await persistCheckIn(content, structuredData || EMPTY_SUMMARY);
+  };
+
+  /** AI 失败时仍保存用户原文，不把演示数据当成整理结果 */
+  const handleSaveWithoutAI = async (originalText: string) => {
+    await persistCheckIn(originalText, EMPTY_SUMMARY);
+  };
+
   /** 处理返回编辑 */
   const handleEdit = () => {
-    // 保持原有的 content 和 structuredData，回到编辑页面时会显示AI整理结果
     setStep('input');
   };
 
-  /** 处理照片完成 */
-  const handlePhotoComplete = () => {
-    toast.success('打卡完成！');
-    setTimeout(() => {
-      router.push('/profile');
-    }, 1500);
-  };
+  if (!isSkipModeReady || (isRestoring && (isConnected || isSkipMode || Boolean(effectiveAddress)))) {
+    return (
+      <div className="min-h-screen bg-[#FFFEF2] flex items-center justify-center p-6">
+        <p className="text-ink/70" style={{ fontFamily: 'Georgia, serif' }}>
+          正在恢复打卡内容...
+        </p>
+      </div>
+    );
+  }
 
   /** 如果未连接钱包且不在体验模式 */
   if (!isConnected && !isSkipMode) {
@@ -226,7 +298,6 @@ export default function CheckInPage() {
     return (
       <div className="min-h-screen bg-[#FFFEF2] flex items-center justify-center p-6">
         <div className="max-w-md w-full space-y-8">
-          {/* 顶部成功提示 */}
           <div className="text-center space-y-4">
             <motion.div
               initial={{ scale: 0 }}
@@ -243,11 +314,12 @@ export default function CheckInPage() {
               今日已打卡
             </h1>
             <p className="text-ink/60" style={{ fontFamily: 'Georgia, serif' }}>
-              明天再来吧，修行贵在坚持
+              今天填写的内容已经保存，刷新后仍在这里
             </p>
           </div>
 
-          {/* 功能导航按钮 */}
+          {savedReflection && <SavedReflection reflection={savedReflection} />}
+
           <div className="space-y-3">
             <button
               onClick={() => router.push('/profile')}
@@ -281,7 +353,6 @@ export default function CheckInPage() {
   return (
     <div className="min-h-screen bg-[#FFFEF2] p-6 py-12">
       <div className="max-w-4xl mx-auto">
-        {/* 头部 */}
         <div className="mb-8 text-center">
           <h1
             className="text-3xl font-bold text-ink mb-2"
@@ -294,7 +365,15 @@ export default function CheckInPage() {
           </p>
         </div>
 
-        {/* 步骤内容 */}
+        {isSkipMode && savedReflection && (
+          <div className="mb-8 space-y-3">
+            <p className="text-center text-ink/70" style={{ fontFamily: 'Georgia, serif' }}>
+              今天已经保存过的内容。体验模式可以继续再记一笔。
+            </p>
+            <SavedReflection reflection={savedReflection} />
+          </div>
+        )}
+
         <AnimatePresence mode="wait">
           {step === 'question' && (
             <DailyQuestion key="question" onAnswer={handleQuestionAnswer} />
@@ -306,7 +385,11 @@ export default function CheckInPage() {
               isMeaningful={isMeaningful!}
               initialValue={content}
               structuredData={structuredData}
+              aiError={aiError}
+              isSaving={isSaving}
               onSubmit={handleContentSubmit}
+              onSaveWithoutAI={handleSaveWithoutAI}
+              onDraftChange={setContent}
               onCancel={() => router.push('/profile')}
             />
           )}
@@ -359,7 +442,6 @@ export default function CheckInPage() {
                 <p className="text-ink/60">你的复盘已保存</p>
               </div>
 
-              {/* 照片分享功能 Coming Soon */}
               <div className="border-2 border-ink/20 bg-paper p-8 text-center">
                 <motion.div
                   initial={{ opacity: 0, scale: 0.8 }}
@@ -389,7 +471,6 @@ export default function CheckInPage() {
                 </motion.div>
               </div>
 
-              {/* 导航选项 */}
               <div className="space-y-3">
                 <button
                   onClick={() => router.push('/profile')}
@@ -428,7 +509,6 @@ export default function CheckInPage() {
           )}
         </AnimatePresence>
 
-        {/* 参赛信息模块 */}
         <CompetitionInfo />
       </div>
     </div>

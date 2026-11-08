@@ -4,6 +4,7 @@
  */
 
 import { StructuredReflectionData } from './db';
+import { describeDeepSeekFailure, parseReflectionJson } from './deepseek-error';
 
 /**
  * DeepSeek API 配置
@@ -44,40 +45,16 @@ const SYSTEM_PROMPT = `你是一个专业的复盘助手。请将用户的复盘
 }`;
 
 /**
- * Mock AI 响应
- * 当API调用失败时的降级方案
- */
-function getMockResponse(content: string): StructuredReflectionData {
-  const wordCount = content.length;
-
-  // 根据内容长度生成不同深度的Mock数据
-  return {
-    gains: wordCount > 200
-      ? ['完成了重要工作', '学习了新知识', '锻炼了身体', '陪伴了家人']
-      : ['完成了一项任务'],
-    losses: wordCount > 200
-      ? ['花费了太多时间在社交媒体', '熬夜影响了健康', '拖延了重要事项']
-      : ['浪费了一些时间'],
-    ideas: wordCount > 200
-      ? ['尝试番茄工作法', '每天早起30分钟', '定期复盘总结']
-      : ['明天改进'],
-    emotion: ['积极', '平静', '焦虑', '疲惫'][Math.floor(Math.random() * 4)],
-    keywords: ['成长', '效率', '健康', '学习', '复盘'].slice(0, 3 + Math.floor(Math.random() * 3)),
-  };
-}
-
-/**
- * 调用 DeepSeek API 进行结构化提取
- * @param content 用户反思内容
- * @returns 结构化数据
+ * 调用 DeepSeek API 进行结构化提取。
+ * 没有密钥、密钥无效或请求失败时抛出可读错误，不再静默换成演示数据。
  */
 export async function processReflectionWithDeepSeek(content: string): Promise<StructuredReflectionData> {
   const apiKey = process.env.DEEPSEEK_API_KEY;
 
-  // 如果没有API Key，使用Mock数据
   if (!apiKey) {
-    console.warn('[DeepSeek] 未配置API Key，使用Mock数据');
-    return getMockResponse(content);
+    const message = describeDeepSeekFailure({ hasApiKey: false });
+    console.warn('[DeepSeek]', message);
+    throw new DeepSeekError(message);
   }
 
   try {
@@ -96,34 +73,62 @@ export async function processReflectionWithDeepSeek(content: string): Promise<St
         temperature: 0.7,
         max_tokens: 1000,
       }),
-      // 10秒超时
       signal: AbortSignal.timeout(10000),
     });
 
     if (!response.ok) {
+      const bodyText = await response.text();
       throw new DeepSeekError(
-        `API请求失败: ${response.statusText}`,
+        describeDeepSeekFailure({
+          hasApiKey: true,
+          status: response.status,
+          statusText: response.statusText,
+          bodyText,
+        }),
         response.status
       );
     }
 
     const data = await response.json();
-    const result = data.choices[0].message.content;
-
-    // 解析JSON
-    const structuredData = JSON.parse(result);
-
-    // 验证数据结构
-    if (!structuredData.gains || !structuredData.losses || !structuredData.emotion) {
-      throw new DeepSeekError('AI返回数据格式不正确');
+    const result = data?.choices?.[0]?.message?.content;
+    if (typeof result !== 'string' || !result.trim()) {
+      throw new DeepSeekError('AI 没有返回可整理的内容，请稍后重试。');
     }
+
+    let structuredData: StructuredReflectionData;
+    try {
+      structuredData = parseReflectionJson(result) as StructuredReflectionData;
+    } catch (parseError) {
+      throw new DeepSeekError(
+        parseError instanceof Error
+          ? parseError.message
+          : 'AI 返回的内容不是有效 JSON，无法整理这次复盘。'
+      );
+    }
+
+    if (
+      !structuredData ||
+      !Array.isArray(structuredData.gains) ||
+      !Array.isArray(structuredData.losses) ||
+      !structuredData.emotion
+    ) {
+      throw new DeepSeekError('AI 返回的数据缺少收获、损失或情绪，无法完成整理。');
+    }
+
+    structuredData.ideas = Array.isArray(structuredData.ideas) ? structuredData.ideas : [];
+    structuredData.keywords = Array.isArray(structuredData.keywords) ? structuredData.keywords : [];
 
     console.log('[DeepSeek] AI处理成功:', structuredData);
     return structuredData;
   } catch (error) {
-    // 网络错误或超时，使用Mock数据
-    console.error('[DeepSeek] API调用失败，使用Mock数据:', error);
-    return getMockResponse(content);
+    if (error instanceof DeepSeekError) {
+      console.error('[DeepSeek] API调用失败:', error.message);
+      throw error;
+    }
+
+    const message = describeDeepSeekFailure({ hasApiKey: true, error });
+    console.error('[DeepSeek] API调用失败:', error);
+    throw new DeepSeekError(message);
   }
 }
 

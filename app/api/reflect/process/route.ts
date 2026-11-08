@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     // 验证参数
     if (!content || typeof content !== 'string') {
       return NextResponse.json(
-        { error: '缺少必需参数: content' },
+        { success: false, error: '缺少必需参数: content' },
         { status: 400 }
       );
     }
@@ -27,14 +27,14 @@ export async function POST(request: NextRequest) {
     // 验证内容长度（10-5000字）
     if (content.length < 10) {
       return NextResponse.json(
-        { error: '反思内容太短，至少10个字' },
+        { success: false, error: '反思内容太短，至少10个字' },
         { status: 400 }
       );
     }
 
     if (content.length > 5000) {
       return NextResponse.json(
-        { error: '反思内容太长，最多5000个字' },
+        { success: false, error: '反思内容太长，最多5000个字' },
         { status: 400 }
       );
     }

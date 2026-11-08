@@ -5,17 +5,55 @@
  * 独立路由，展示打卡成功状态和后续导航选项
  */
 
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAccount } from 'wagmi';
 import { motion } from 'framer-motion';
 import { CompetitionInfo } from '@/components/CompetitionInfo';
+import { SavedReflection } from '@/components/check-in/SavedReflection';
+import { CheckInService } from '@/lib/check-in-service';
+import { useSkipMode } from '@/lib/context/SkipModeContext';
+import type { Reflection } from '@/lib/db';
 
 export default function CheckInSuccessPage() {
   const router = useRouter();
+  const { address, isConnected } = useAccount();
+  const { isSkipMode, isSkipModeReady, demoAddress } = useSkipMode();
+  const [reflection, setReflection] = useState<Reflection | null>(null);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'missing'>('loading');
+
+  const effectiveAddress = isSkipMode ? demoAddress : address;
+
+  useEffect(() => {
+    if (!isSkipModeReady) return;
+
+    if (!effectiveAddress) {
+      if (!isConnected && !isSkipMode) setStatus('missing');
+      return;
+    }
+
+    let cancelled = false;
+    setStatus('loading');
+
+    CheckInService.getLatestTodayCheckIn(effectiveAddress)
+      .then((record) => {
+        if (cancelled) return;
+        setReflection(record || null);
+        setStatus(record ? 'ready' : 'missing');
+      })
+      .catch((error) => {
+        console.error('[CheckInSuccess] 读取已保存内容失败:', error);
+        if (!cancelled) setStatus('missing');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveAddress, isConnected, isSkipMode, isSkipModeReady]);
 
   return (
     <div className="min-h-screen bg-[#FFFEF2] p-6 py-12">
       <div className="max-w-4xl mx-auto">
-        {/* 头部 */}
         <div className="mb-8 text-center">
           <h1
             className="text-3xl font-bold text-ink mb-2"
@@ -28,7 +66,6 @@ export default function CheckInSuccessPage() {
           </p>
         </div>
 
-        {/* 打卡成功内容 */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -49,10 +86,23 @@ export default function CheckInSuccessPage() {
             >
               打卡成功！
             </h2>
-            <p className="text-ink/60">你的复盘已保存</p>
+            <p className="text-ink/60">你的复盘已保存。刷新后仍会显示这次填写的内容。</p>
           </div>
 
-          {/* 照片分享功能 Coming Soon */}
+          {status === 'loading' && (
+            <p className="text-center text-ink/60" style={{ fontFamily: 'Georgia, serif' }}>
+              正在读取已保存的内容...
+            </p>
+          )}
+
+          {status === 'ready' && reflection && <SavedReflection reflection={reflection} />}
+
+          {status === 'missing' && (
+            <p className="text-center text-ink/70" style={{ fontFamily: 'Georgia, serif' }}>
+              这次没有读到已保存的正文。如果刚刚保存失败，请回到打卡页重试。
+            </p>
+          )}
+
           <div className="border-2 border-ink/20 bg-paper p-8 text-center">
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
@@ -82,7 +132,6 @@ export default function CheckInSuccessPage() {
             </motion.div>
           </div>
 
-          {/* 导航选项 */}
           <div className="space-y-3">
             <button
               onClick={() => router.push('/profile')}
@@ -119,7 +168,6 @@ export default function CheckInSuccessPage() {
           </div>
         </motion.div>
 
-        {/* 参赛信息模块 */}
         <CompetitionInfo />
       </div>
     </div>
